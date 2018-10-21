@@ -10,3 +10,5 @@ Slo OS
   * 스치 [트위터](https://twitter.com/YtScratch)
 * 테스터
   * 테마카 [트위터](https://twitter.com/Temaca333)
+
+# 구현할 것
