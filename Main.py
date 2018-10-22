@@ -4,6 +4,7 @@ import math
 import pygame
 import time
 import datetime
+import codecs
 from configparser import ConfigParser
 
 pygame.init()
@@ -14,7 +15,8 @@ class state:
 
 def configparser_parse(path):
     config = ConfigParser()
-    config.read(path)
+    # config.read(path)
+    config.readfp(codecs.open(path, 'r', encoding='utf-8'))
 
     result = {}
 
@@ -73,6 +75,11 @@ class color:
 
 objects = []
 
+def remove_object_by_type(_type):
+    for obj in objects:
+        if type(obj) == _type:
+            obj.destroy()
+
 def add_object(_obj):
     objects.append(_obj)
 
@@ -117,7 +124,7 @@ class LockScreen(GameObject):
 
         self.lock = True
 
-        self.click_start_position = None
+        self.click_start_position = cursor.position
         self.clicking = False
 
         self.background = pygame.Surface(game.display.size)
@@ -152,7 +159,7 @@ class LockScreen(GameObject):
                     try:
                         offset = x_offset / y_offset
                     except ZeroDivisionError:
-                        offset = 5
+                        offset = 0
 
                     if offset >= 5:
                         self.x_target = game.display.size[0]
@@ -240,7 +247,12 @@ class Shutdown(GameObject):
         self.background = pygame.Surface(game.display.size)
 
         self.buttons = []
+        self.buttons.append(self.Button(pygame.image.load('./res/image/lock.png'), '잠금 화면', (change_state, state.lock), self))
         self.buttons.append(self.Button(pygame.image.load('./res/image/shutdown.png'), '시스템 종료', (game.quit,), self))
+
+        self.back_button_surface = pygame.transform.smoothscale(pygame.image.load('./res/image/left_arrow.png'), (32, 32))
+        self.back_button_surface.convert()
+        self.back_button_position = [16, 16]
 
         GameObject.highlight = Shutdown
 
@@ -255,9 +267,9 @@ class Shutdown(GameObject):
         for button in self.buttons:
             button.tick()
 
-        if keyboard.escape:
-            self.target_y = -game.display.size[1] - 10
-            self.moving = True
+        self.back_button_position[1] = 16 + self.y
+        if cursor.epressed[0] and self.back_button_position[0] <= cursor.position[0] <= self.back_button_position[0] + self.back_button_surface.get_width() and self.back_button_position[1] <= cursor.position[1] <= self.back_button_position[1] + self.back_button_surface.get_height() or keyboard.escape:
+            self.quit()
 
         if self.y <= -game.display.size[1] - 1:
             self.destroy()
@@ -267,6 +279,12 @@ class Shutdown(GameObject):
 
         for button in self.buttons:
             button.render()
+
+        game.window.blit(self.back_button_surface, self.back_button_position)
+
+    def quit(self):
+        self.target_y = -game.display.size[1] - 1.5
+        self.moving = True
 
     def destroy(self):
         GameObject.highlight = None
@@ -366,6 +384,8 @@ def change_state(next_state):
     game.state = next_state
 
     if game.state == state.lock:
+        remove_object_by_type(Shutdown)
+
         add_object(Bucker())
         add_object(LockScreen(color.text, color.background))
 
