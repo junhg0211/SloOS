@@ -65,8 +65,6 @@ class slo:
         slo.configparser_write('./slo/bucker.ini', slo.bucker)
         slo.configparser_write('./slo/lastest.ini', slo.lastest)
 
-        print('changed')
-
 slo.load()
 
 this_username = getpass.getuser()
