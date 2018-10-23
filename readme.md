@@ -10,7 +10,3 @@ Slo OS
   * 스치 [트위터](https://twitter.com/YtScratch)
 * 테스터
   * 테마카 [트위터](https://twitter.com/Temaca333)
-
-# 구현할 것
-* 잠금화면 시계 시 부분을 hh가 아니라 h로 바꾸기
-  * 08:06 -> 8:06
