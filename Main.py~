@@ -26,7 +26,7 @@ class slo:
     def configparser_parse(path):
         config = ConfigParser()
         # config.read(path)
-        config.read_file(codecs.open(path, 'r', encoding='utf-8'))
+        config.readfp(codecs.open(path, 'r', encoding='utf-8'))
 
         result = {}
 
