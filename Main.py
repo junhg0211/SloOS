@@ -153,12 +153,12 @@ class LockScreen(RootObject):
     date_surface: pygame.Surface
     date_position: tuple
 
-    def __init__(self, colour_text, colour_background, font=slo.slo['appearance']['font']):
-        self.color_text = colour_text
-        self.color_background = colour_background
+    def __init__(self, text_color, background_color, font=slo.slo['appearance']['font']):
+        self.text_color = text_color
+        self.background_color = background_color
 
-        self.text_format_time = TextFormat(font, root.display.size[1] // 5, self.color_text)
-        self.text_format_date = TextFormat(font, root.display.size[1] // 20, self.color_text)
+        self.text_format_time = TextFormat(font, root.display.size[1] // 5, self.text_color)
+        self.text_format_date = TextFormat(font, root.display.size[1] // 20, self.text_color)
 
         self.x = 0
         self.x_target = 0
@@ -169,11 +169,14 @@ class LockScreen(RootObject):
         self.clicking = False
 
         self.background = pygame.Surface(root.display.size)
-        self.background.fill(self.color_background)
+        self.background.fill(self.background_color)
 
         immediate = str(datetime.datetime.now())
         self.date = immediate.split()[0].split('-')[1:]
         self.time = immediate.split()[1].split(':')[:2]
+
+        if self.time[0] == '0':
+            self.time = self.time[1:]
 
         self.date_surface = self.text_format_date.render('월 '.join(self.date) + '일')
         self.date_position = (self.text_format_date.size + self.x, root.display.size[1] - self.text_format_date.size - self.date_surface.get_height())
@@ -217,7 +220,13 @@ class LockScreen(RootObject):
             now_date = immediate.split()[0].split('-')[1:]
             now_time = immediate.split()[1].split(':')[:2]
 
+            if now_time[0] == '0':
+                now_time = now_time[1:]
+
             if now_date != self.date or now_time != self.time:
+                self.time = now_time
+                self.date = now_date
+
                 self.date_surface = self.text_format_date.render('월 '.join(self.date) + '일')
                 self.time_surface = self.text_format_time.render(':'.join(self.time))
 
