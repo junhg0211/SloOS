@@ -1,4 +1,4 @@
-:start
+癤�:start
 @echo off
 
 :mainpage
@@ -9,13 +9,13 @@ echo                                                   Slo OS Debugger
 echo                                                      MainPage
 echo ========================================================================================================================
 echo.
-echo         1. 바로 실행                                     0. 종료
-echo         2. 색상 변경
+echo         1. Dibeogeu                                      0. Jongryo
+echo         2. Saeksang byeongyeong
 echo.
 echo ========================================================================================================================
 echo.
 
-set /p a=원하는 항목의 숫자를 입력한 후 Enter키를 눌러주세요: 
+set /p a=Weonha-neun gineung-eul ipryeok hago, Enter key-reul nuruseyo: 
 
 if %a%==1 goto run
 if %a%==2 goto yet
@@ -28,7 +28,8 @@ echo                                                   Slo OS Debugger
 echo                                                        Error
 echo ========================================================================================================================
 echo.
-echo                                없는 기능입니다. 아무 키나 눌러서 메인 화면으로 돌아갑니다.
+echo                                      Gineung-i an balgyeon doeeot-seupnida. 
+echo                                       Orbareun beonho-reul ipryeok haseyo.
 echo.
 echo ========================================================================================================================
 echo.
@@ -40,7 +41,8 @@ goto mainpage
 cls
 python .\Main.py
 echo.
-echo 프로그램이 종료되었습니다. 아무 키를 눌러서 디버거를 종료합니다.
+echo Program-i jongryo doeeot-seupnida. Amu key-na nulleoseo jongryo-hapnida.
+echo.
 pause>nul
 exit
 
@@ -52,8 +54,8 @@ echo                                                   Slo OS Debugger
 echo                                                        Error
 echo ========================================================================================================================
 echo.
-echo                                            아직 개발되지 않은 기능입니다.
-echo                                      아무 키나 눌러서 메인 화면으로 돌아갑니다.
+echo                                       Ajik gaebal doeji anun gineung ipnida.
+echo                                Amu key-na nulleoseo main-hwamyeon-euro doragapnida.
 echo.
 echo ========================================================================================================================
 echo.
