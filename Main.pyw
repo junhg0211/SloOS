@@ -223,6 +223,8 @@ class LockScreen(RootObject):
         self.time_surface = self.text_format_time.render(':'.join(self.time))
         self.time_position = (self.date_position[0] + self.x, self.date_position[1] - self.time_surface.get_height() + 36)
 
+        RootObject.highlight = LockScreen
+
     def tick(self):
         if self.x != root.display.size[0]:
             if self.lock:
@@ -282,6 +284,10 @@ class LockScreen(RootObject):
         if self.x < root.display.size[0]:
             root.window.blit(self.date_surface, self.date_position)
             root.window.blit(self.time_surface, self.time_position)
+
+    def destroy(self):
+        super().destroy()
+        RootObject.highlight = None
 
 def center(x, y):
     return (x - y) / 2
@@ -552,9 +558,9 @@ def change_state(next_state):
     if root.state == state.lock:
         remove_object_by_type(Shutdown)
 
-        add_object(Bucker())
         add_object(LockScreen(color.text, color.background))
 
+add_object(Bucker())
 change_state(state.lock)
 
 delta = 0
