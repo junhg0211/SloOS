@@ -1,12 +1,19 @@
 # coding=utf-8
 
 import math
-import pygame
 import time
 import datetime
 import codecs
 import getpass
+from os import system
 from configparser import ConfigParser
+
+try:
+    import pygame
+except ModuleNotFoundError:
+    print('pygame 모듈이 발견되지 않았습니다. pygame 모듈을 다운로드합니다.')
+    system('pip install pygame')
+    import pygame
 
 pygame.init()
 
@@ -114,6 +121,8 @@ class color:
     text = (222, 222, 222)
     gray = (127, 127, 127)
 
+    red = (255, 0, 0)
+
 objects = []
 
 def remove_object_by_type(_type):
@@ -123,6 +132,32 @@ def remove_object_by_type(_type):
 
 def add_object(_obj):
     objects.append(_obj)
+
+def get_ahead_window():
+    for i in range(len(objects))[::-1]:
+        if type(objects[i]) == BuckerWindow:
+            return objects[i]
+
+def get_on_cursor_window():
+    banned_areas = []  # [(x, y, width, height)]
+    for i in range(len(objects))[::-1]:
+        this_object = objects[i]
+
+        try:
+            this_object.width
+        except AttributeError:
+            continue
+
+        banned = False
+
+        if this_object.x <= cursor.position[0] <= this_object.x + this_object.width and this_object.y <= cursor.position[1] <= this_object.y + this_object.height:
+            for banned_area in banned_areas:
+                if banned_area[0] <= cursor.position[0] <= banned_area[0] + banned_area[2] and banned_area[1] <= cursor.position[1] <= banned_area[1] + banned_area[3]:
+                    banned = True
+                    break
+
+            if not banned:
+                return this_object
 
 class RootObject(object):
     highlight = None
@@ -135,6 +170,10 @@ class RootObject(object):
 
     def destroy(self):
         objects.remove(self)
+
+    def ahead(self):
+        objects.remove(self)
+        objects.append(self)
 
 class TextFormat:
     def __init__(self, font, size, colour):
@@ -363,8 +402,10 @@ class Bucker(RootObject):
         def tick(self):
             if cursor.epressed[0]:
                 if self.x <= cursor.position[0] <= self.x + self.surface.get_width() and self.y <= cursor.position[1] <= self.y + self.surface.get_height():
-                    if self.command == add_object:
+                    if self.argument[0] == Shutdown:
                         self.command(self.argument[0]())
+                    elif self.argument[0] == BuckerWindow:
+                        self.command(self.argument[0](0, 0, 500, 500, title=str(time.time())))
                     else:
                         self.command(*self.argument)
 
@@ -381,6 +422,7 @@ class Bucker(RootObject):
 
         self.dock_items = []
         self.dock_items.append(self.DockItem(pygame.image.load('./res/image/shutdown.png'), (add_object, Shutdown), self))
+        self.dock_items.append(self.DockItem(pygame.image.load('./res/image/window.png'), (add_object, BuckerWindow), self))
 
         self.dock_width = len(self.dock_items) * 92 + 20
         self.dock_height = 92
@@ -412,8 +454,77 @@ class Bucker(RootObject):
         for item in self.dock_items:
             item.render()
 
-class Window(RootObject):
-    pass
+class BuckerWindow(RootObject):
+    close = pygame.transform.scale(pygame.image.load('./res/image/close.png'), (20, 20)).convert_alpha()
+    text_format = TextFormat(slo.slo['appearance']['font'], 18, color.background)
+
+    def __init__(self, x, y, w, h, title='BuckerWindow', border_color=slo.bucker['window']['border_color'], background_color=slo.bucker['window']['background_color'], title_height=24):
+        self.x = x
+        self.y = y
+        self.title_height = title_height
+        self.width = w + 2
+        self.height = h + self.title_height + 1
+        self.title = title
+        self.border_color = border_color
+        self.background_color = background_color
+
+        self.text_format.color = self.background_color
+
+        self.moving = False
+        self.original_x = None
+        self.original_y = None
+        self.start_moving_x = None
+        self.start_moving_y = None
+
+        self.window = pygame.Surface((0, 0))
+        self.surface = pygame.Surface((self.width - 2, self.height - self.title_height - 1))
+        self.surface.fill(self.background_color)
+
+        self.build_surface()
+
+    def build_surface(self):
+        title_surface = self.text_format.render(self.title)
+
+        self.window = pygame.Surface((self.width, self.height))
+        self.window.fill(self.background_color)
+        pygame.draw.rect(self.window, self.border_color, ((0, 0), (self.width, self.title_height)))
+        pygame.draw.line(self.window, self.border_color, (0, 0), (0, self.height), 1)
+        pygame.draw.line(self.window, self.border_color, (0, self.height), (self.width, self.height), 3)
+        pygame.draw.line(self.window, self.border_color, (self.width, 0), (self.width, self.height), 3)
+        self.window.blit(self.close, (self.width - self.close.get_width() - 2, 2))
+        self.window.blit(title_surface, (center(self.width, title_surface.get_width()), 0))
+
+        self.window.blit(self.surface, (1, self.title_height))
+
+    def tick(self):
+        if cursor.fpressed[0]:
+            if self.x <= cursor.position[0] <= self.x + self.width:
+                if self.y <= cursor.position[1] <= self.y + self.title_height and get_ahead_window() == self:
+                    self.moving = True
+                    self.original_x = self.x
+                    self.original_y = self.y
+                    self.start_moving_x = cursor.position[0]
+                    self.start_moving_y = cursor.position[1]
+                if self.y <= cursor.position[1] <= self.y + self.height:
+                    self.ahead()
+        
+        if self.moving:
+            self.x = cursor.position[0] - self.start_moving_x + self.original_x
+            self.y = cursor.position[1] - self.start_moving_y + self.original_y
+
+        if cursor.epressed[0]:
+            if self.x <= cursor.position[0] <= self.x + self.width:
+                self.moving = False
+
+            if self.x + self.width - self.title_height <= cursor.position[0] <= self.x + self.width and self.y <= cursor.position[1] <= self.y + self.title_height:
+                self.destroy()
+
+    def render(self):
+        root.window.blit(self.window, (self.x, self.y))
+
+    @staticmethod
+    def add(bucker_window):
+        add_object(bucker_window)
 
 class HUD(RootObject):
     state_surface: pygame.Surface
