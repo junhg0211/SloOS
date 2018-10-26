@@ -39,7 +39,7 @@ goto mainpage
 
 :run
 cls
-python .\Main.py
+python .\Main.pyw
 echo.
 echo Program-i jongryo doeeot-seupnida. Amu key-na nulleoseo jongryo-hapnida.
 echo.
