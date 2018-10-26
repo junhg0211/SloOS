@@ -502,6 +502,8 @@ class BuckerWindow(RootObject):
 
         self.window.blit(self.surface, (1, self.title_height))
 
+        self.surface = self.surface.convert()
+
     def tick(self):
         if cursor.fpressed[0]:
             if self.x <= cursor.position[0] <= self.x + self.width:
