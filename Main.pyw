@@ -656,16 +656,18 @@ while not root.exit:
             cursor.fpressed[i] = not cursor.ppressed[i] and cursor.pressed[i]
             cursor.epressed[i] = cursor.ppressed[i] and not cursor.pressed[i]
 
-        root.window.fill(color.background)
-        for obj in objects:
-            if type(obj) == RootObject.highlight or RootObject.highlight is None:
-                obj.tick()
-        if slo.slo['display']['hud']: hud.tick()
+        if root.display.display_fps is not None:
+            if root.display.display_fps > 0:
+                for obj in objects:
+                    if type(obj) == RootObject.highlight or RootObject.highlight is None:
+                        obj.tick()
+                if slo.slo['display']['hud']: hud.tick()
 
-        for obj in objects:
-            obj.render()
-        if slo.slo['display']['hud']: hud.render()
-        pygame.display.update()
+                root.window.fill(color.background)
+                for obj in objects:
+                    obj.render()
+                if slo.slo['display']['hud']: hud.render()
+                pygame.display.update()
 
     else:
         delta += (now - pnow) / time_per_tick
