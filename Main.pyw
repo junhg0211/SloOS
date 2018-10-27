@@ -217,7 +217,7 @@ class LockScreen(RootObject):
             self.background.fill(self.background_color)
         else:
             tmp = pygame.transform.smoothscale(pygame.image.load(slo.lockscreen['background']['image_path']), root.display.size).convert()
-            self.background.blit(tmp, (0, 0)); tmp
+            self.background.blit(tmp, (0, 0)); del tmp
 
         immediate = str(datetime.datetime.now())
         self.date = immediate.split()[0].split('-')[1:]
@@ -351,10 +351,10 @@ class Shutdown(RootObject):
         self.background = pygame.Surface(root.display.size)
 
         self.buttons = []
-        self.buttons.append(self.Button(pygame.image.load('./res/image/lock.png'), '잠금 화면', (change_state, state.lock), self))
-        self.buttons.append(self.Button(pygame.image.load('./res/image/shutdown.png'), '시스템 종료', (root.quit,), self))
+        self.buttons.append(self.Button(pygame.image.load('./res/image/icon/lock.png'), '잠금 화면', (change_state, state.lock), self))
+        self.buttons.append(self.Button(pygame.image.load('./res/image/icon/shutdown.png'), '시스템 종료', (root.quit,), self))
 
-        self.back_button_surface = pygame.transform.smoothscale(pygame.image.load('./res/image/left_arrow.png'), (32, 32))
+        self.back_button_surface = pygame.transform.smoothscale(pygame.image.load('./res/image/icon/left_arrow.png'), (32, 32))
         self.back_button_surface.convert()
         self.back_button_position = [16, 16]
 
@@ -437,8 +437,8 @@ class Bucker(RootObject):
         self.background_image = pygame.transform.smoothscale(pygame.image.load(slo.bucker['background']['image_path']), (slo.slo['display']['size'][0], slo.slo['display']['size'][1])).convert()
 
         self.dock_items = []
-        self.dock_items.append(self.DockItem(pygame.image.load('./res/image/shutdown.png'), (add_object, Shutdown), self))
-        self.dock_items.append(self.DockItem(pygame.image.load('./res/image/window.png'), (add_object, BuckerWindow), self))
+        self.dock_items.append(self.DockItem(pygame.image.load('./res/image/icon/shutdown.png'), (add_object, Shutdown), self))
+        self.dock_items.append(self.DockItem(pygame.image.load('./res/image/icon/window.png'), (add_object, BuckerWindow), self))
 
         self.dock_width = len(self.dock_items) * 92 + 20
         self.dock_height = 92
@@ -465,13 +465,13 @@ class Bucker(RootObject):
         else:
             root.window.blit(self.background_image, (0, 0))
 
-        pygame.draw.rect(root.window, self.dock_color, ((self.dock_x, self.dock_y), (self.dock_width, self.dock_height)))
+        # TODO HERE IS THE DOCK BACKGROUND
 
         for item in self.dock_items:
             item.render()
 
 class BuckerWindow(RootObject):
-    close = pygame.transform.scale(pygame.image.load('./res/image/close.png'), (20, 20)).convert_alpha()
+    close = pygame.transform.scale(pygame.image.load('./res/image/icon/close.png'), (20, 20)).convert_alpha()
     text_format = TextFormat(slo.slo['appearance']['font'], 18, color.background)
 
     def __init__(self, x, y, w, h, title='BuckerWindow', border_color=slo.bucker['window']['border_color'], background_color=slo.bucker['window']['background_color'], title_height=24, move=True):
