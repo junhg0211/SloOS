@@ -579,13 +579,11 @@ class HUD(RootObject):
 
     def tick(self):
         self.fps_surface = self.text_format.render(str(root.display.display_fps) + ' FPS')
-        self.state_surface = self.text_format.render(str(root.state) + ' STATE')
         self.objects_surface = self.text_format.render(str(len(objects)) + ' OBJECT')
 
     def render(self):
         root.window.blit(self.fps_surface, (0, 0))
-        root.window.blit(self.state_surface, (0, 20))
-        root.window.blit(self.objects_surface, (0, 40))
+        root.window.blit(self.objects_surface, (0, 20))
 
 hud = None
 if slo.slo['display']['hud']:
