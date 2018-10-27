@@ -422,7 +422,8 @@ class Bucker(RootObject):
             self.y = self.original_y + self.dock_bucker.dock_y
 
         def render(self):
-            root.window.blit(self.surface, (self.x, self.y))
+            if self.original_y != self.y:
+                root.window.blit(self.surface, (self.x, self.y))
 
     def __init__(self):
         # text_format = TextFormat('./res/font/consola.ttf', 72, color.text)
