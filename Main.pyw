@@ -216,8 +216,8 @@ class LockScreen(RootObject):
         if slo.lockscreen['background']['type'] == 'solid':
             self.background.fill(self.background_color)
         else:
-            tmp = pygame.transform.smoothscale(pygame.image.load(slo.lockscreen['background']['image_path']), root.display.size)
-            self.background.blit(tmp, (0, 0))
+            tmp = pygame.transform.smoothscale(pygame.image.load(slo.lockscreen['background']['image_path']), root.display.size).convert()
+            self.background.blit(tmp, (0, 0)); tmp
 
         immediate = str(datetime.datetime.now())
         self.date = immediate.split()[0].split('-')[1:]

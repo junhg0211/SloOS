@@ -8,5 +8,5 @@ Slo OS
 * 개발일자: `2018-10-21` - `현재`
 * 개발진
   * 스치 [트위터](https://twitter.com/YtScratch)
-* 테스터
+* 테스터, 디자이너
   * 테마카 [트위터](https://twitter.com/Temaca333)
