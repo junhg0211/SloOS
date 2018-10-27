@@ -26,8 +26,8 @@ class slo:
     # bucker = configparser_parse('./slo/bucker.ini')
     slo = None
     bucker = None
-
     lastest = None
+    lockscreen = None
 
     @staticmethod
     def configparser_parse(path):
@@ -65,12 +65,14 @@ class slo:
         slo.slo = slo.configparser_parse('./slo/slo.ini')
         slo.bucker = slo.configparser_parse('./slo/bucker.ini')
         slo.lastest = slo.configparser_parse('./slo/lastest.ini')
+        slo.lockscreen = slo.configparser_parse('./slo/lockscreen.ini')
 
     @staticmethod
     def save():
         slo.configparser_write('./slo/slo.ini', slo.slo)
         slo.configparser_write('./slo/bucker.ini', slo.bucker)
         slo.configparser_write('./slo/lastest.ini', slo.lastest)
+        slo.configparser_write('./slo/lockscreen.ini', slo.lockscreen)
 
 slo.load()
 
@@ -211,7 +213,11 @@ class LockScreen(RootObject):
         self.clicking = False
 
         self.background = pygame.Surface(root.display.size)
-        self.background.fill(self.background_color)
+        if slo.lockscreen['background']['type'] == 'solid':
+            self.background.fill(self.background_color)
+        else:
+            tmp = pygame.transform.smoothscale(pygame.image.load(slo.lockscreen['background']['image_path']), root.display.size)
+            self.background.blit(tmp, (0, 0))
 
         immediate = str(datetime.datetime.now())
         self.date = immediate.split()[0].split('-')[1:]
