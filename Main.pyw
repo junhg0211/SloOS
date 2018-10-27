@@ -141,6 +141,7 @@ def get_ahead_window():
 def get_on_cursor_window():
     banned_areas = []  # [(x, y, width, height)]
     for i in range(len(objects))[::-1]:
+        # print(banned_areas)
         this_object = objects[i]
 
         try:
@@ -158,6 +159,8 @@ def get_on_cursor_window():
 
             if not banned:
                 return this_object
+
+        banned_areas.append((this_object.x, this_object.y, this_object.width, this_object.height))
 
 class RootObject(object):
     highlight = None
@@ -464,7 +467,7 @@ class BuckerWindow(RootObject):
     close = pygame.transform.scale(pygame.image.load('./res/image/close.png'), (20, 20)).convert_alpha()
     text_format = TextFormat(slo.slo['appearance']['font'], 18, color.background)
 
-    def __init__(self, x, y, w, h, title='BuckerWindow', border_color=slo.bucker['window']['border_color'], background_color=slo.bucker['window']['background_color'], title_height=24):
+    def __init__(self, x, y, w, h, title='BuckerWindow', border_color=slo.bucker['window']['border_color'], background_color=slo.bucker['window']['background_color'], title_height=24, move=True):
         self.x = x
         self.y = y
         self.title_height = title_height
@@ -473,6 +476,16 @@ class BuckerWindow(RootObject):
         self.title = title
         self.border_color = border_color
         self.background_color = background_color
+        self.move = True
+
+        self.target_x = self.x
+        self.target_y = self.y
+
+        self.x_moving = move
+        self.y_moving = move
+
+        self.x = cursor.position[0] - self.width / 2
+        self.y = cursor.position[1] - self.height / 2
 
         self.text_format.color = self.background_color
 
@@ -481,6 +494,8 @@ class BuckerWindow(RootObject):
         self.original_y = None
         self.start_moving_x = None
         self.start_moving_y = None
+
+        self.exit = False
 
         self.window = pygame.Surface((0, 0))
         self.surface = pygame.Surface((self.width - 2, self.height - self.title_height - 1))
@@ -505,27 +520,49 @@ class BuckerWindow(RootObject):
         self.surface = self.surface.convert()
 
     def tick(self):
+        if self.x_moving:
+            self.x += (self.target_x - self.x) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
+            if math.fabs(self.x - self.target_x) < 1:
+                self.x = self.target_x
+                self.x_moving = False
+
+        if self.y_moving:
+            self.y += (self.target_y - self.y) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
+            if math.fabs(self.y - self.target_y) < 1:
+                self.y = self.target_y
+                self.y_moving = False
+
+        if self.exit:
+            self.y_moving = True
+            self.target_y = root.display.size[1] + 1
+
+            if root.display.size[1] <= self.y:
+                self.destroy()
+
+        if self.moving:
+            self.target_x = cursor.position[0] - self.start_moving_x + self.original_x
+            self.target_y = cursor.position[1] - self.start_moving_y + self.original_y
+
+            self.x_moving = True
+            self.y_moving = True
+
         if cursor.fpressed[0]:
             if self.x <= cursor.position[0] <= self.x + self.width:
-                if self.y <= cursor.position[1] <= self.y + self.title_height and get_ahead_window() == self:
+                if self.y <= cursor.position[1] <= self.y + self.title_height and get_on_cursor_window() == self:
                     self.moving = True
                     self.original_x = self.x
                     self.original_y = self.y
                     self.start_moving_x = cursor.position[0]
                     self.start_moving_y = cursor.position[1]
-                if self.y <= cursor.position[1] <= self.y + self.height:
-                    self.ahead()
-        
-        if self.moving:
-            self.x = cursor.position[0] - self.start_moving_x + self.original_x
-            self.y = cursor.position[1] - self.start_moving_y + self.original_y
+
+            if get_on_cursor_window() == self:
+                self.ahead()
 
         if cursor.epressed[0]:
-            if self.x <= cursor.position[0] <= self.x + self.width:
-                self.moving = False
+            self.moving = False
 
-            if self.x + self.width - self.title_height <= cursor.position[0] <= self.x + self.width and self.y <= cursor.position[1] <= self.y + self.title_height:
-                self.destroy()
+            if self.x + self.width - self.title_height <= cursor.position[0] <= self.x + self.width and self.y <= cursor.position[1] <= self.y + self.title_height and get_on_cursor_window() == self:
+                self.exit = True
 
     def render(self):
         root.window.blit(self.window, (self.x, self.y))
