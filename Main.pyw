@@ -603,26 +603,27 @@ add_object(Bucker())
 change_state(state.lock)
 
 delta = 0
-delta2 = 0
-delta2_count = 0
 
 now = time.time()
 if root.display.fps is not None:
     time_per_tick = 1 / root.display.fps
 
+loop = now
+
 while not root.exit:
     pnow = now
     now = time.time()
-    delta2 += now - pnow
-
-    if delta2 >= 1:
-        root.display.display_fps = delta2_count
-        delta2 -= 1
-        delta2_count = 0
 
     if delta >= 1 or root.display.fps is None:
+        ploop = loop
+        loop = time.time()
+
+        try:
+            root.display.display_fps = round(1 / (loop - ploop))
+        except ZeroDivisionError:
+            root.display.display_fps = 10000
+
         delta -= 1
-        delta2_count += 1
 
         cursor.position = pygame.mouse.get_pos()
         cursor.ppressed = cursor.pressed
