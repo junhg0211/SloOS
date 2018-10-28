@@ -5,8 +5,8 @@ import time
 import datetime
 import codecs
 import getpass
+import configparser
 from os import system
-from configparser import ConfigParser
 
 try:
     import pygame
@@ -32,9 +32,12 @@ class slo:
 
     @staticmethod
     def configparser_parse(path):
-        config = ConfigParser()
+        config = configparser.ConfigParser()
         # config.read(path)
-        config.read_file(codecs.open(path, 'r', encoding='utf-8'))
+        try:
+            config.read_file(codecs.open(path, 'r', encoding='utf-8'))
+        except UnicodeDecodeError:
+            config.read_file(codecs.open(path, 'r'))
 
         result = {}
 
@@ -48,7 +51,7 @@ class slo:
     @staticmethod
     def configparser_write(path, value: dict):
         cfgfile = open(path, 'w', encoding='utf-8')
-        config = ConfigParser()
+        config = configparser.ConfigParser()
 
         for key in value.keys():
             config.add_section(key)
