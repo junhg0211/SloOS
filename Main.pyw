@@ -28,6 +28,7 @@ class slo:
     bucker = None
     lastest = None
     lockscreen = None
+    surfer = None
 
     @staticmethod
     def configparser_parse(path):
@@ -66,6 +67,7 @@ class slo:
         slo.bucker = slo.configparser_parse('./slo/bucker.ini')
         slo.lastest = slo.configparser_parse('./slo/lastest.ini')
         slo.lockscreen = slo.configparser_parse('./slo/lockscreen.ini')
+        slo.surfer = slo.configparser_parse('./slo/surfer.ini')
 
     @staticmethod
     def save():
@@ -73,6 +75,7 @@ class slo:
         slo.configparser_write('./slo/bucker.ini', slo.bucker)
         slo.configparser_write('./slo/lastest.ini', slo.lastest)
         slo.configparser_write('./slo/lockscreen.ini', slo.lockscreen)
+        slo.configparser_write('./slo/surfer.ini', slo.surfer)
 
 slo.load()
 
@@ -149,7 +152,7 @@ def get_on_cursor_window():
         this_object = objects[I]
 
         try:
-            this_object.width
+            (this_object.y, this_object.width)
         except AttributeError:
             continue
 
@@ -492,8 +495,8 @@ class Bucker(RootObject):
         def tick(self):
             if self.x <= cursor.position[0] <= self.x + self.surface.get_width() and self.y <= cursor.position[1] <= self.y + self.surface.get_height():
                 if cursor.epressed[0]:
-                    if self.argument[0] == Shutdown:
-                        self.command(self.argument[0]())
+                    if self.argument[0] in (Shutdown, Surfer):
+                        self.command(self.argument[0](*self.argument[1:]))
                     elif self.argument[0] == BuckerWindow:
                         self.command(self.argument[0](0, 0, 500, 500, title=str(time.time())))
                     else:
@@ -517,8 +520,8 @@ class Bucker(RootObject):
 
     def __init__(self):
         self.dock_items = []
-        self.dock_items.append(self.DockItem(pygame.image.load('./res/image/icon/shutdown.png'), (add_object, Shutdown), '시스템 종료', self))
-        self.dock_items.append(self.DockItem(pygame.image.load('./res/image/icon/window.png'), (add_object, BuckerWindow), '__init__.BuckerWindow', self))
+        for item in slo.bucker['dock']['items']:
+            self.dock_items.append(eval(item))
 
         self.dock_width = len(self.dock_items) * 92 + 20
         self.dock_height = 92
@@ -681,6 +684,9 @@ class Surfer(RootObject):
     x_button_start = center(root.display.size[0], width * 108 - 36)
     y_button_start = center(root.display.size[1], height * 144 - 72)
 
+    left = 'Surfer.left'
+    right = 'Surfer.right'
+
     class Button(RootObject):
         text_format = TextFormat(slo.slo['appearance']['font'], 18, color.text)
 
@@ -723,16 +729,20 @@ class Surfer(RootObject):
             root.window.blit(self.surface, (self.x, self.y))
             root.window.blit(self.text_surface, (self.text_x, self.text_y))
 
-    def __init__(self):
-        self.x = -root.display.size[0]
+    def __init__(self, side='Surfer.left'):
+        self.side = side
+
+        self.close_x = -root.display.size[0] if self.side == self.left else root.display.size[0]
+
+        self.x = self.close_x
         self.target_x = 0
         self.moving = True
 
         self.background = pygame.Surface(root.display.size)
 
         self.buttons = []
-        self.buttons.append(self.Button(pygame.image.load('./res/image/icon/window.png'), 'Hello, world!', self, command=(print, 'Hello, world!')))
-        self.buttons.append(self.Button(pygame.image.load('./res/image/icon/shutdown.png'), 'Back', self, command=(self.quit,)))
+        for item in slo.surfer['item']['items']:
+            self.buttons.append(eval(item))
 
         self.back_button_surface = pygame.transform.smoothscale(pygame.image.load('./res/image/icon/left_arrow.png'), (32, 32))
         self.back_button_surface.convert()
@@ -756,7 +766,7 @@ class Surfer(RootObject):
         if cursor.epressed[0] and self.back_button_position_x <= cursor.position[0] <= self.back_button_position_x + self.back_button_surface.get_width() and self.back_button_position_y <= cursor.position[1] <= self.back_button_position_y + self.back_button_surface.get_height() or keyboard.escape:
             self.quit()
 
-        if self.x < -root.display.size[0] - 1:
+        if (self.x < -root.display.size[0] - 1 and self.side == self.left) or (self.x > root.display.size[0] + 1 and self.side == self.right):
             self.destroy()
 
     def render(self):
@@ -767,13 +777,17 @@ class Surfer(RootObject):
 
         root.window.blit(self.back_button_surface, (self.back_button_position_x, self.back_button_position_y))
 
-    def quit(self):
-        self.moving = True
-        self.target_x = -root.display.size[0] - 2
+    def start(self, _object, *args):
+        add_object(_object(*args))
+        self.quit()
 
-    def destroy(self):
+    def quit(self):
         RootObject.highlight = None
-        super().destroy()
+        self.moving = True
+        if self.side == self.left:
+            self.target_x = -root.display.size[0] - 2
+        else:
+            self.target_x = root.display.size[0] + 2
 
 class HUD(RootObject):
     state_surface: pygame.Surface
