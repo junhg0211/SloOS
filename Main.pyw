@@ -122,7 +122,7 @@ class color:
     background = (31, 33, 37)
     text = (222, 222, 222)
     gray = (127, 127, 127)
-
+    black = (0, 0, 0)
     red = (255, 0, 0)
 
 objects = []
@@ -205,7 +205,7 @@ class LockScreen(RootObject):
         self.text_format_date = TextFormat(font, root.display.size[1] // 20, self.text_color)
 
         self.x = 0
-        self.x_target = 0
+        self.target_x = 0
 
         self.lock = True
 
@@ -232,6 +232,22 @@ class LockScreen(RootObject):
         self.time_surface = self.text_format_time.render(':'.join(self.time))
         self.time_position = (self.date_position[0] + self.x, self.date_position[1] - self.time_surface.get_height() + 36)
 
+        self.system_shutdown_icon_appear = False
+        self.system_shutdown_icon_pappear = False
+        self.system_shutdown_icon_fappear = False
+        self.system_shutdown_icon_eappear = False
+        self.system_shutdown_icon_surface = pygame.transform.smoothscale(pygame.image.load('./res/image/icon/shutdown.png'), (72, 72))
+        self.system_shutdown_icon_x = root.display.size[0]
+        self.system_shutdown_icon_y = -72
+        self.system_shutdown_icon_target_x = 0
+        self.system_shutdown_icon_target_y = 0
+        self.system_shutdown_icon_x_moving = False
+        self.system_shutdown_icon_y_moving = False
+        self.system_shutdown_delay = 0.5  # second
+        self.system_shutdown_time = 0
+        self.system_shutdown_surface = pygame.Surface(root.display.size)
+        self.system_shutdown_surface.fill(color.black)
+
         RootObject.highlight = LockScreen
 
     def tick(self):
@@ -242,7 +258,7 @@ class LockScreen(RootObject):
                     self.clicking = True
 
                 if self.clicking:
-                    self.x_target = -min(0, self.click_start_position[0] - cursor.position[0])
+                    self.target_x = -min(0, self.click_start_position[0] - cursor.position[0])
 
                 if cursor.epressed[0]:
                     self.clicking = False
@@ -256,15 +272,15 @@ class LockScreen(RootObject):
                         offset = 0
 
                     if offset >= 5:
-                        self.x_target = root.display.size[0]
+                        self.target_x = root.display.size[0]
                         self.lock = False
                     else:
-                        self.x_target = 0
+                        self.target_x = 0
 
-            if self.x_target != self.x and root.display.display_fps is not None:
-                self.x += (self.x_target - self.x) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
-                if math.fabs(self.x_target - self.x) < 0.1:
-                    self.x = self.x_target
+            if self.target_x != self.x and root.display.display_fps is not None:
+                self.x += (self.target_x - self.x) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
+                if math.fabs(self.target_x - self.x) < 0.1:
+                    self.x = self.target_x
 
             immediate = str(datetime.datetime.now())
             now_date = immediate.split()[0].split('-')[1:]
@@ -272,6 +288,45 @@ class LockScreen(RootObject):
 
             if now_time[0] == '0':
                 now_time = now_time[1:]
+
+            self.system_shutdown_icon_pappear = self.system_shutdown_icon_appear
+            self.system_shutdown_icon_appear = cursor.position[0] >= root.display.size[0] - 5 and cursor.position[1] < 5
+
+            self.system_shutdown_icon_fappear = not self.system_shutdown_icon_pappear and self.system_shutdown_icon_appear
+            self.system_shutdown_icon_eappear = self.system_shutdown_icon_pappear and not self.system_shutdown_icon_appear
+
+            if self.system_shutdown_icon_fappear:
+                self.system_shutdown_icon_target_x = root.display.size[0] - 82
+                self.system_shutdown_icon_target_y = 10
+                self.system_shutdown_icon_x_moving = True
+                self.system_shutdown_icon_y_moving = True
+
+            if self.system_shutdown_icon_eappear:
+                self.system_shutdown_icon_target_x = root.display.size[0]
+                self.system_shutdown_icon_target_y = -72
+                self.system_shutdown_icon_x_moving = True
+                self.system_shutdown_icon_y_moving = True
+
+            if self.system_shutdown_icon_x_moving:
+                self.system_shutdown_icon_x += (self.system_shutdown_icon_target_x - self.system_shutdown_icon_x) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
+                if math.fabs(self.system_shutdown_icon_target_x - self.system_shutdown_icon_x) < 1:
+                    self.system_shutdown_icon_x = self.system_shutdown_icon_target_x
+                    self.system_shutdown_icon_x_moving = False
+
+            if self.system_shutdown_icon_y_moving:
+                self.system_shutdown_icon_y += (self.system_shutdown_icon_target_y - self.system_shutdown_icon_y) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
+                if math.fabs(self.system_shutdown_icon_target_y - self.system_shutdown_icon_y) < 1:
+                    self.system_shutdown_icon_y = self.system_shutdown_icon_target_y
+                    self.system_shutdown_icon_y_moving = False
+
+            if self.system_shutdown_icon_appear and cursor.pressed[0]:
+                self.system_shutdown_time += 1 / root.display.display_fps
+                self.system_shutdown_surface.set_alpha(self.system_shutdown_time / self.system_shutdown_delay * 255)
+                if self.system_shutdown_delay <= self.system_shutdown_time:
+                    add_object(Shutdown(mode=Shutdown.immediate))
+            else:
+                self.system_shutdown_time = 0
+                self.system_shutdown_surface.set_alpha(None)
 
             if now_date != self.date or now_time != self.time:
                 self.time = now_time
@@ -290,9 +345,15 @@ class LockScreen(RootObject):
     def render(self):
         root.window.blit(self.background, (self.x, 0))
 
+        if self.system_shutdown_icon_appear:
+            root.window.blit(self.system_shutdown_icon_surface, (self.system_shutdown_icon_x, self.system_shutdown_icon_y))
+
         if self.x < root.display.size[0]:
             root.window.blit(self.date_surface, self.date_position)
             root.window.blit(self.time_surface, self.time_position)
+
+        if 0 < self.system_shutdown_time:
+            root.window.blit(self.system_shutdown_surface, (0, 0))
 
     def destroy(self):
         super().destroy()
@@ -402,8 +463,8 @@ class Bucker(RootObject):
             self.argument = action[1:]
             self.dock_bucker = dock_bucker
 
-            self.original_y = 11
             self.original_x = 20 + len(self.dock_bucker.dock_items) * 92
+            self.original_y = 12
 
             if self.surface.get_width() != 72:
                 self.surface = pygame.transform.smoothscale(self.surface, (72, self.surface.get_height()))
@@ -444,17 +505,21 @@ class Bucker(RootObject):
         self.dock_height = 92
         self.dock_x = center(root.display.size[0], self.dock_width)
         self.dock_y = root.display.size[1]
-        self.dock_y_target = root.display.size[1]
+        self.dock_target_y = root.display.size[1]
         self.dock_color = color.gray
+
+        self.dock_surface = pygame.Surface((self.dock_width, self.dock_height))
+        self.dock_surface.fill(slo.bucker['dock']['background_color'])
+        self.dock_surface.set_alpha(slo.bucker['dock']['opacity'])
 
     def tick(self):
         if root.state != state.lock:
-            self.dock_y_target = root.display.size[1] - self.dock_height
+            self.dock_target_y = root.display.size[1] - self.dock_height
 
-        if self.dock_y_target != self.dock_y and root.display.display_fps is not None:
-            self.dock_y += (self.dock_y_target - self.dock_y) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
-            if math.fabs(self.dock_y_target - self.dock_y) < 0.1:
-                self.dock_y = self.dock_y_target
+        if self.dock_target_y != self.dock_y and root.display.display_fps is not None:
+            self.dock_y += (self.dock_target_y - self.dock_y) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
+            if math.fabs(self.dock_target_y - self.dock_y) < 0.1:
+                self.dock_y = self.dock_target_y
 
         for item in self.dock_items:
             item.tick()
@@ -465,7 +530,7 @@ class Bucker(RootObject):
         else:
             root.window.blit(self.background_image, (0, 0))
 
-        # TODO HERE IS THE DOCK BACKGROUND
+        root.window.blit(self.dock_surface, (self.dock_x, self.dock_y))
 
         for item in self.dock_items:
             item.render()

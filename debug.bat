@@ -2,6 +2,8 @@
 @echo off
 
 :mainpage
+set a=a
+
 cls
 echo.
 echo ========================================================================================================================
@@ -15,25 +17,11 @@ echo.
 echo ========================================================================================================================
 echo.
 
-set /p a=Weonha-neun gineung-eul ipryeok hago, Enter key-reul nuruseyo: 
+set /p a=Weonha-neun gineung-eul ipryeok hago, Enter key-reul nuruseyo:
 
 if %a%==1 goto run
 if %a%==2 goto yet
 if %a%==0 exit
-
-cls
-echo.
-echo ========================================================================================================================
-echo                                                   Slo OS Debugger
-echo                                                        Error
-echo ========================================================================================================================
-echo.
-echo                                      Gineung-i an balgyeon doeeot-seupnida. 
-echo                                       Orbareun beonho-reul ipryeok haseyo.
-echo.
-echo ========================================================================================================================
-echo.
-pause>nul
 
 goto mainpage
 
@@ -41,10 +29,11 @@ goto mainpage
 cls
 python .\Main.pyw
 echo.
-echo Program-i jongryo doeeot-seupnida. Amu key-na nulleoseo jongryo-hapnida.
+echo Program-i jongryo doeeot-seupnida. Amu key-na nulleoseo mainpage-ro doragapnida.
 echo.
 pause>nul
-exit
+
+goto mainpage
 
 :yet
 cls
