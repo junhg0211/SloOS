@@ -274,6 +274,7 @@ class LockScreen(RootObject):
                     if offset >= 5:
                         self.target_x = root.display.size[0]
                         self.lock = False
+                        self.system_shutdown_icon_target_x = root.display.size[0]
                     else:
                         self.target_x = 0
 
@@ -295,7 +296,7 @@ class LockScreen(RootObject):
             self.system_shutdown_icon_fappear = not self.system_shutdown_icon_pappear and self.system_shutdown_icon_appear
             self.system_shutdown_icon_eappear = self.system_shutdown_icon_pappear and not self.system_shutdown_icon_appear
 
-            if self.system_shutdown_icon_fappear:
+            if self.system_shutdown_icon_fappear and self.lock:
                 self.system_shutdown_icon_target_x = root.display.size[0] - 82
                 self.system_shutdown_icon_target_y = 10
                 self.system_shutdown_icon_x_moving = True
@@ -319,7 +320,7 @@ class LockScreen(RootObject):
                     self.system_shutdown_icon_y = self.system_shutdown_icon_target_y
                     self.system_shutdown_icon_y_moving = False
 
-            if self.system_shutdown_icon_appear and cursor.pressed[0]:
+            if self.system_shutdown_icon_appear and cursor.pressed[0] and self.lock:
                 self.system_shutdown_time += 1 / root.display.display_fps
                 self.system_shutdown_surface.set_alpha(self.system_shutdown_time / self.system_shutdown_delay * 255)
                 if self.system_shutdown_delay <= self.system_shutdown_time:
