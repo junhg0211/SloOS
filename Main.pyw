@@ -118,6 +118,8 @@ class cursor:
     fpressed = list(pressed)
     epressed = list(pressed)
 
+    sposition = position
+
 class color:
     background = (31, 33, 37)
     text = (222, 222, 222)
@@ -128,23 +130,23 @@ class color:
 objects = []
 
 def remove_object_by_type(_type):
-    for obj in objects:
-        if type(obj) == _type:
-            obj.destroy()
+    for OBJ in objects:
+        if type(OBJ) == _type:
+            OBJ.destroy()
 
 def add_object(_obj):
     objects.append(_obj)
 
 def get_ahead_window():
-    for i in range(len(objects))[::-1]:
-        if type(objects[i]) == BuckerWindow:
-            return objects[i]
+    for I in range(len(objects))[::-1]:
+        if type(objects[I]) == BuckerWindow:
+            return objects[I]
 
 def get_on_cursor_window():
     banned_areas = []  # [(x, y, width, height)]
-    for i in range(len(objects))[::-1]:
+    for I in range(len(objects))[::-1]:
         # print(banned_areas)
-        this_object = objects[i]
+        this_object = objects[I]
 
         try:
             this_object.width
@@ -457,11 +459,16 @@ class Shutdown(RootObject):
         super().destroy()
 
 class Bucker(RootObject):
+    background_image = pygame.transform.smoothscale(pygame.image.load(slo.bucker['background']['image_path']), (slo.slo['display']['size'][0], slo.slo['display']['size'][1])).convert()
+
     class DockItem(RootObject):
-        def __init__(self, surface, action, dock_bucker):
+        text_format = TextFormat(slo.slo['appearance']['font'], 18, color.text)
+
+        def __init__(self, surface, action, text, dock_bucker):
             self.surface = surface
             self.command = action[0]
             self.argument = action[1:]
+            self.text = text
             self.dock_bucker = dock_bucker
 
             self.original_x = 20 + len(self.dock_bucker.dock_items) * 92
@@ -476,31 +483,42 @@ class Bucker(RootObject):
             self.x = self.original_x
             self.y = self.original_y
 
+            self.text_surface = self.text_format.render(self.text)
+            self.text_appear = False
+
+            self.text_x = 0
+            self.text_y = 0
+
         def tick(self):
-            if cursor.epressed[0]:
-                if self.x <= cursor.position[0] <= self.x + self.surface.get_width() and self.y <= cursor.position[1] <= self.y + self.surface.get_height():
+            if self.x <= cursor.position[0] <= self.x + self.surface.get_width() and self.y <= cursor.position[1] <= self.y + self.surface.get_height():
+                if cursor.epressed[0]:
                     if self.argument[0] == Shutdown:
                         self.command(self.argument[0]())
                     elif self.argument[0] == BuckerWindow:
                         self.command(self.argument[0](0, 0, 500, 500, title=str(time.time())))
                     else:
                         self.command(*self.argument)
+                self.text_appear = True
+            else:
+                self.text_appear = False
 
             self.x = self.original_x + self.dock_bucker.dock_x
             self.y = self.original_y + self.dock_bucker.dock_y
+
+            self.text_x = center(self.surface.get_width(), self.text_surface.get_width()) + self.x
+            self.text_y = center(self.surface.get_height(), self.text_surface.get_height()) + self.y - self.surface.get_height()
 
         def render(self):
             if self.original_y != self.y:
                 root.window.blit(self.surface, (self.x, self.y))
 
+            if self.text_appear:
+                root.window.blit(self.text_surface, (self.text_x, self.text_y))
+
     def __init__(self):
-        # text_format = TextFormat('./res/font/consola.ttf', 72, color.text)
-
-        self.background_image = pygame.transform.smoothscale(pygame.image.load(slo.bucker['background']['image_path']), (slo.slo['display']['size'][0], slo.slo['display']['size'][1])).convert()
-
         self.dock_items = []
-        self.dock_items.append(self.DockItem(pygame.image.load('./res/image/icon/shutdown.png'), (add_object, Shutdown), self))
-        self.dock_items.append(self.DockItem(pygame.image.load('./res/image/icon/window.png'), (add_object, BuckerWindow), self))
+        self.dock_items.append(self.DockItem(pygame.image.load('./res/image/icon/shutdown.png'), (add_object, Shutdown), '시스템 종료', self))
+        self.dock_items.append(self.DockItem(pygame.image.load('./res/image/icon/window.png'), (add_object, BuckerWindow), '__init__.BuckerWindow', self))
 
         self.dock_width = len(self.dock_items) * 92 + 20
         self.dock_height = 92
@@ -524,6 +542,18 @@ class Bucker(RootObject):
 
         for item in self.dock_items:
             item.tick()
+
+        if cursor.epressed[0] and cursor.sposition[0] <= 5 and cursor.sposition[1] <= 5:
+            try:
+                offset = (cursor.position[0] - cursor.sposition[0]) / (cursor.position[1] - cursor.sposition[1])
+            except ZeroDivisionError:
+                if cursor.position[0] - cursor.sposition[0] <= 0:
+                    offset = 0
+                else:
+                    offset = 10
+
+            if offset >= 10:
+                add_object(Surfer())
 
     def render(self):
         if slo.bucker['background']['type'] == 'solid':
@@ -644,6 +674,107 @@ class BuckerWindow(RootObject):
     def add(bucker_window):
         add_object(bucker_window)
 
+class Surfer(RootObject):
+    width = (root.display.size[0] - 400) / 108
+    height = (root.display.size[1] - 360) / 144
+
+    x_button_start = center(root.display.size[0], width * 108 - 36)
+    y_button_start = center(root.display.size[1], height * 144 - 72)
+
+    class Button(RootObject):
+        text_format = TextFormat(slo.slo['appearance']['font'], 18, color.text)
+
+        def __init__(self, surface, text, surfer, command=None):
+            self.surface = surface
+            self.command = command
+            self.text = text
+            self.surfer = surfer
+
+            self.func = command[0]
+            self.arguments = command[1:]
+
+            self.x, self.y = 0, 0
+
+            if self.surface.get_width() != 72:
+                self.surface = pygame.transform.smoothscale(self.surface, (72, self.surface.get_height()))
+            if self.surface.get_height() != 72:
+                self.surface = pygame.transform.smoothscale(self.surface, (self.surface.get_width(), 72))
+
+            self.text_surface = self.text_format.render(self.text)
+            self.text_x, self.text_y = 0, 0
+
+        def tick(self):
+            if self.surfer.moving:
+                number = self.surfer.buttons.index(self)
+                x = number % self.surfer.width
+                y = max(0, round(number / self.surfer.width + 0.5) - 1)
+
+                self.x = self.surfer.x_button_start + 108 * x + self.surfer.x * 2
+                self.y = self.surfer.y_button_start + 144 * y
+
+                self.text_x = self.surfer.x_button_start + 108 * x + 36 - self.text_surface.get_width() / 2 + self.surfer.x * 3
+                self.text_y = self.y + self.surface.get_height() + self.text_surface.get_height()
+
+            if cursor.epressed[0]:
+                if self.x <= cursor.position[0] <= self.x + self.surface.get_width() and self.y <= cursor.position[1] <= self.y + self.surface.get_height():
+                    self.func(*self.arguments)
+
+        def render(self):
+            root.window.blit(self.surface, (self.x, self.y))
+            root.window.blit(self.text_surface, (self.text_x, self.text_y))
+
+    def __init__(self):
+        self.x = -root.display.size[0]
+        self.target_x = 0
+        self.moving = True
+
+        self.background = pygame.Surface(root.display.size)
+
+        self.buttons = []
+        self.buttons.append(self.Button(pygame.image.load('./res/image/icon/window.png'), 'Hello, world!', self, command=(print, 'Hello, world!')))
+        self.buttons.append(self.Button(pygame.image.load('./res/image/icon/shutdown.png'), 'Back', self, command=(self.quit,)))
+
+        self.back_button_surface = pygame.transform.smoothscale(pygame.image.load('./res/image/icon/left_arrow.png'), (32, 32))
+        self.back_button_surface.convert()
+        self.back_button_position_x = 16
+        self.back_button_position_y = 16
+
+        RootObject.highlight = Surfer
+
+    def tick(self):
+        if self.moving:
+            self.x += (self.target_x - self.x) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
+
+            if math.fabs(self.x - self.target_x) < 1:
+                self.x = self.target_x
+                self.moving = False
+
+        for button in self.buttons:
+            button.tick()
+
+        self.back_button_position_x = 16 + self.x * 2
+        if cursor.epressed[0] and self.back_button_position_x <= cursor.position[0] <= self.back_button_position_x + self.back_button_surface.get_width() and self.back_button_position_y <= cursor.position[1] <= self.back_button_position_y + self.back_button_surface.get_height() or keyboard.escape:
+            self.quit()
+
+        if self.x < -root.display.size[0] - 1:
+            self.destroy()
+
+    def render(self):
+        root.window.blit(self.background, (self.x, 0))
+
+        for button in self.buttons:
+            button.render()
+
+        root.window.blit(self.back_button_surface, (self.back_button_position_x, self.back_button_position_y))
+
+    def quit(self):
+        self.moving = True
+        self.target_x = -root.display.size[0] - 2
+
+    def destroy(self):
+        RootObject.highlight = None
+        super().destroy()
+
 class HUD(RootObject):
     state_surface: pygame.Surface
     fps_surface: pygame.Surface
@@ -727,6 +858,9 @@ while not root.exit:
         for i in range(3):
             cursor.fpressed[i] = not cursor.ppressed[i] and cursor.pressed[i]
             cursor.epressed[i] = cursor.ppressed[i] and not cursor.pressed[i]
+
+            if cursor.fpressed[0]:
+                cursor.sposition = cursor.position
 
         if root.display.display_fps is not None:
             if root.display.display_fps > 0:
