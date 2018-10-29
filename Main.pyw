@@ -22,8 +22,6 @@ class state:
     home = 'state.home'
 
 class slo:
-    # slo = configparser_parse('./slo/slo.ini')
-    # bucker = configparser_parse('./slo/bucker.ini')
     slo = None
     bucker = None
     lastest = None
@@ -33,7 +31,6 @@ class slo:
     @staticmethod
     def configparser_parse(path):
         config = configparser.ConfigParser()
-        # config.read(path)
         try:
             config.read_file(codecs.open(path, 'r', encoding='utf-8'))
         except UnicodeDecodeError:
@@ -117,6 +114,10 @@ class keyboard:
     space = False
     escape = False
 
+    keydown_unicode = ''
+
+    input_board = '`1234567890-=~!@#$%^&*()_+qwertyuiop[]\QWERTYUIOP{}|asdfghjkl;\'ASDFGHJKL:\"zxcvbnm,./ZXCVBNM<>?\n '
+
 class cursor:
     position = pygame.mouse.get_pos()
     ppressed = pressed = pygame.mouse.get_pressed()
@@ -135,6 +136,8 @@ class color:
 
 objects = []
 
+highlighted_object = None
+
 def remove_object_by_type(_type):
     for OBJ in objects:
         if type(OBJ) == _type:
@@ -142,35 +145,6 @@ def remove_object_by_type(_type):
 
 def add_object(_obj):
     objects.append(_obj)
-
-def get_ahead_window():
-    for I in range(len(objects))[::-1]:
-        if type(objects[I]) == BuckerWindow:
-            return objects[I]
-
-def get_on_cursor_window():
-    banned_areas = []  # [(x, y, width, height)]
-    for I in range(len(objects))[::-1]:
-        # print(banned_areas)
-        this_object = objects[I]
-
-        try:
-            (this_object.y, this_object.width)
-        except AttributeError:
-            continue
-
-        banned = False
-
-        if this_object.x <= cursor.position[0] <= this_object.x + this_object.width and this_object.y <= cursor.position[1] <= this_object.y + this_object.height:
-            for banned_area in banned_areas:
-                if banned_area[0] <= cursor.position[0] <= banned_area[0] + banned_area[2] and banned_area[1] <= cursor.position[1] <= banned_area[1] + banned_area[3]:
-                    banned = True
-                    break
-
-            if not banned:
-                return this_object
-
-        banned_areas.append((this_object.x, this_object.y, this_object.width, this_object.height))
 
 class RootObject(object):
     highlight = None
@@ -251,7 +225,7 @@ class LockScreen(RootObject):
         self.system_shutdown_icon_target_y = 0
         self.system_shutdown_icon_x_moving = False
         self.system_shutdown_icon_y_moving = False
-        self.system_shutdown_delay = 0.5  # second
+        self.system_shutdown_delay = 0.5
         self.system_shutdown_time = 0
         self.system_shutdown_surface = pygame.Surface(root.display.size)
         self.system_shutdown_surface.fill(color.black)
@@ -577,7 +551,7 @@ class BuckerWindow(RootObject):
     text_format = TextFormat(slo.slo['appearance']['font'], 18, color.background)
 
     class TextArea(RootObject):
-        def __init__(self, x=None, y=None, w=None, h=None, value=None, text_format=None, background_color=None, window=None):
+        def __init__(self, x=None, y=None, w=None, h=None, value=None, text_format=None, background_color=None, writable=None, window=None):
             self.x = x
             self.y = y
             self.width = w
@@ -585,6 +559,7 @@ class BuckerWindow(RootObject):
             self.value = value
             self.text_format = text_format
             self.background_color = background_color
+            self.writable = writable
             self.window = window
 
             if self.x is None:
@@ -601,28 +576,31 @@ class BuckerWindow(RootObject):
                 self.text_format = TextFormat(slo.slo['appearance']['domino_font'], 18, color.text)
             if self.background_color is None:
                 self.background_color = color.background
+            if self.writable is None:
+                self.writable = True
 
             self.surface = pygame.Surface((self.width, self.height))
 
         def tick(self):
             self.surface.fill(self.background_color)
             values = self.value.split('\n')
-            for i in range(len(values)):
-                if self.text_format.size * i < self.height:
-                    self.surface.blit(self.text_format.render(values[i]), (0, self.text_format.size * i))
+            for I in range(len(values)):
+                if self.text_format.size * I < self.height:
+                    self.surface.blit(self.text_format.render(values[I]), (0, self.text_format.size * I))
+
+            if highlighted_object == self.window:
+                if self.writable and keyboard.keydown_unicode:
+                    if keyboard.keydown_unicode in keyboard.input_board:
+                        self.value += keyboard.keydown_unicode
+                    elif keyboard.keydown_unicode == '\b':
+                        self.value = self.value[:-1]
+                    elif keyboard.keydown_unicode == '\r':
+                        self.value += '\n'
 
         def render(self):
             self.window.surface.blit(self.surface, (self.x, self.y))
 
-    def __init__(self, program):  # x=None, y=None, w=None, h=None, title='BuckerWindow', border_color=slo.bucker['window']['border_color'], background_color=slo.bucker['window']['background_color'], title_height=24
-        # self.x = x
-        # self.y = y
-        # self.title_height = title_height
-        # self.width = w + 2
-        # self.height = h + self.title_height + 1
-        # self.title = title
-        # self.border_color = border_color
-        # self.background_color = background_color
+    def __init__(self, program):
         self.program = program
 
         self.x = 0
@@ -631,7 +609,8 @@ class BuckerWindow(RootObject):
         self.width = 150
         self.height = 150 + self.title_height + 1
         self.title = 'BuckerWindow'
-        self.border_color = slo.bucker['window']['border_color']
+        self.normal_border_color = slo.bucker['window']['normal_border_color']
+        self.highlighted_border_color = slo.bucker['window']['highlighted_border_color']
         self.background_color = slo.bucker['window']['background_color']
 
         self.elements = []
@@ -687,50 +666,51 @@ class BuckerWindow(RootObject):
                 if sline[1] == 'width': self.width = eval(' '.join(sline[2:]))
                 if sline[1] == 'height': self.height = eval(' '.join(sline[2:]))
                 if sline[1] == 'title': self.title = eval(' '.join(sline[2:]))
-                if sline[1] == 'border_color': self.border_color = eval(' '.join(sline[2:]))
+                if sline[1] == 'border_color': self.normal_border_color = eval(' '.join(sline[2:]))
                 if sline[1] == 'background_color': self.background_color = eval(' '.join(sline[2:]))
+                if sline[1] == 'highlighted_background_color': self.highlighted_border_color = eval(' '.join(sline[2:]))
 
             elif sline[0] == 'add':
                 arguments = {}
                 last_key = ''
 
                 if sline[1] == 'TextArea':
-                    keys = ('x', 'y', 'w', 'h', 'value', 'text_format', 'background_color')
+                    keys = ('x', 'y', 'w', 'h', 'value', 'text_format', 'background_color', 'writable')
 
                     for key in keys:
                         arguments[key] = None
 
-                    for i in range(len(sline)):
-                        i += 2
+                    for _i in range(len(sline)):
+                        _i += 2
                         try:
-                            word = sline[i]
+                            word = sline[_i]
                         except IndexError:
                             break
 
-                        if i % 2 == 1:
+                        if _i % 2 == 1:
                             if '_' in word: word = word.replace('_', ' ')
                             if '\\ ' in word: word = word.replace('\\ ', '_')
 
-                            arguments[last_key] = eval(word)
+                            if last_key in keys:
+                                arguments[last_key] = eval(word)
                         else:
-                            if word in keys:
-                                last_key = word
+                            last_key = word
 
-                    self.elements.append(self.TextArea(x=arguments['x'], y=arguments['y'], w=arguments['w'], h=arguments['h'], value=arguments['value'], text_format=arguments['text_format'], background_color=arguments['background_color'], window=self))
+                    self.elements.append(self.TextArea(x=arguments['x'], y=arguments['y'], w=arguments['w'], h=arguments['h'], value=arguments['value'], text_format=arguments['text_format'], background_color=arguments['background_color'], writable=arguments['writable'], window=self))
 
     def build_surface(self):
         title_surface = self.text_format.render(self.title)
 
+        border_color = self.highlighted_border_color if highlighted_object == self else self.normal_border_color
+
         self.window = pygame.Surface((self.width, self.height))
         self.window.fill(self.background_color)
-        pygame.draw.rect(self.window, self.border_color, ((0, 0), (self.width, self.title_height)))
-        pygame.draw.line(self.window, self.border_color, (0, 0), (0, self.height), 1)
-        pygame.draw.line(self.window, self.border_color, (0, self.height), (self.width, self.height), 3)
-        pygame.draw.line(self.window, self.border_color, (self.width, 0), (self.width, self.height), 3)
+        pygame.draw.rect(self.window, border_color, ((0, 0), (self.width, self.title_height)))
+        pygame.draw.line(self.window, border_color, (0, 0), (0, self.height), 1)
+        pygame.draw.line(self.window, border_color, (0, self.height), (self.width, self.height), 3)
+        pygame.draw.line(self.window, border_color, (self.width, 0), (self.width, self.height), 3)
         self.window.blit(self.close, (self.width - self.close.get_width() - 2, 2))
         self.window.blit(title_surface, (center(self.width, title_surface.get_width()), 0))
-
-        self.window.blit(self.surface, (1, self.title_height))
 
         self.surface = self.surface.convert()
 
@@ -902,6 +882,34 @@ class Surfer(RootObject):
         else:
             self.target_x = root.display.size[0] + 2
 
+def get_ahead_window():
+    for I in range(len(objects))[::-1]:
+        if type(objects[I]) == BuckerWindow:
+            return objects[I]
+
+def get_on_cursor_window():
+    banned_areas = []  # [(x, y, width, height)]
+    for I in range(len(objects))[::-1]:
+        this_object = objects[I]
+
+        try:
+            (this_object.y, this_object.width)
+        except AttributeError:
+            continue
+
+        banned = False
+
+        if this_object.x <= cursor.position[0] <= this_object.x + this_object.width and this_object.y <= cursor.position[1] <= this_object.y + this_object.height:
+            for banned_area in banned_areas:
+                if banned_area[0] <= cursor.position[0] <= banned_area[0] + banned_area[2] and banned_area[1] <= cursor.position[1] <= banned_area[1] + banned_area[3]:
+                    banned = True
+                    break
+
+            if not banned:
+                return this_object
+
+        banned_areas.append((this_object.x, this_object.y, this_object.width, this_object.height))
+
 class HUD(RootObject):
     state_surface: pygame.Surface
     fps_surface: pygame.Surface
@@ -953,10 +961,12 @@ while not root.exit:
             root.display.display_fps = 10000
 
         delta -= 1
-
+        
         cursor.position = pygame.mouse.get_pos()
         cursor.ppressed = cursor.pressed
         cursor.pressed = pygame.mouse.get_pressed()
+        if keyboard.keydown_unicode:
+            keyboard.keydown_unicode = ''
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 root.quit()
@@ -972,6 +982,8 @@ while not root.exit:
                     keyboard.space = True
                 elif event.key == pygame.K_ESCAPE:
                     keyboard.escape = True
+
+                keyboard.keydown_unicode = event.unicode
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_RALT:
                     keyboard.ralt = False
@@ -982,14 +994,26 @@ while not root.exit:
                 elif event.key == pygame.K_ESCAPE:
                     keyboard.escape = False
 
-        for i in range(3):
-            cursor.fpressed[i] = not cursor.ppressed[i] and cursor.pressed[i]
-            cursor.epressed[i] = cursor.ppressed[i] and not cursor.pressed[i]
+        if root.display.display_fps is not None:
+            for i in range(3):
+                cursor.fpressed[i] = not cursor.ppressed[i] and cursor.pressed[i]
+                cursor.epressed[i] = cursor.ppressed[i] and not cursor.pressed[i]
 
             if cursor.fpressed[0]:
                 cursor.sposition = cursor.position
 
-        if root.display.display_fps is not None:
+                phiehlighted_object = highlighted_object
+                highlighted_object = get_on_cursor_window()
+
+                try:
+                    phiehlighted_object.build_surface()
+                except AttributeError:
+                    pass
+                try:
+                    highlighted_object.build_surface()
+                except AttributeError:
+                    pass
+
             if root.display.display_fps > 0:
                 for obj in objects:
                     if type(obj) == RootObject.highlight or RootObject.highlight is None:
