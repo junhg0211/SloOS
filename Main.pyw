@@ -1,13 +1,14 @@
 # coding=utf-8
 
-import math
-import time
-import datetime
-import codecs
-import getpass
-import configparser
-from os import system
+import math  # 계산을 위해
+import time  # 시간 계산을 위해
+import datetime  # 현재 날짜와 시간을 위해
+import getpass  # 컴퓨터 사용자 이름 불러오기를 위해
+import configparser  # ini파일 불러오기를 위해
+import codecs  # ini파일 불러오기를 위헤
+from os import system  # 프로그램 외의 명령어를 위해 (cmd명령어 사용 가능함 (!!))
 
+# V 컴퓨터 pygame이 없는 사람을 위한 자동 pygame 설치 서비스
 try:
     import pygame
 except ModuleNotFoundError:
@@ -21,6 +22,7 @@ class state:
     lock = 'state.lock'
     home = 'state.home'
 
+# V 저장해놓은 ini 파일들을 쓸어담음
 class slo:
     slo = None
     bucker = None
@@ -77,8 +79,10 @@ class slo:
         slo.configparser_write('./slo/lockscreen.ini', slo.lockscreen)
         slo.configparser_write('./slo/surfer.ini', slo.surfer)
 
+# V slo.init()이라고 생각하면 됨
 slo.load()
 
+# V 이 유저가 저번에 접속한 그 PC에서 접속한 게 맞나? 아니면 화면 해상도 다시 설정해야지
 this_username = getpass.getuser()
 if this_username != slo.lastest['user']['username']:
     slo.lastest['user']['username'] = this_username
@@ -146,6 +150,7 @@ def remove_object_by_type(_type):
 def add_object(_obj):
     objects.append(_obj)
 
+# V 모든 화면 오브젝트의 부모 클래스 RootObject
 class RootObject(object):
     highlight = None
 
@@ -162,6 +167,7 @@ class RootObject(object):
         objects.remove(self)
         objects.append(self)
 
+# V 화면에 쓸 글씨를 위한 폰트 오브젝트
 class TextFormat:
     def __init__(self, font, size, colour):
         self.font = font
@@ -173,6 +179,7 @@ class TextFormat:
     def render(self, text):
         return self.font.render(text, True, self.color)
 
+# V 잠금화면(락스크린) 오브젝트
 class LockScreen(RootObject):
     time_surface: pygame.Surface
     time_position: tuple
@@ -345,6 +352,7 @@ class LockScreen(RootObject):
 def center(x, y):
     return (x - y) / 2
 
+# V 셧다운(종료 대기화면)
 class Shutdown(RootObject):
     gui = 'Shutdown.mode.GUI'
     immediate = 'Shutdown.mode.IMMEDIATE'
@@ -438,6 +446,7 @@ class Shutdown(RootObject):
         RootObject.highlight = None
         super().destroy()
 
+# V 배경화면(버커) 오브젝트, 독(Dock)도 여기 있음
 class Bucker(RootObject):
     background_image = pygame.transform.smoothscale(pygame.image.load(slo.bucker['background']['image_path']), (slo.slo['display']['size'][0], slo.slo['display']['size'][1])).convert()
 
@@ -546,10 +555,12 @@ class Bucker(RootObject):
         for item in self.dock_items:
             item.render()
 
+# V 모든 윈도우(창) 오브젝트
 class BuckerWindow(RootObject):
     close = pygame.transform.scale(pygame.image.load('./res/image/icon/close.png'), (20, 20)).convert_alpha()
     text_format = TextFormat(slo.slo['appearance']['font'], 18, color.background)
 
+    # V 입력할 수 있는 큰 입력판
     class TextArea(RootObject):
         def __init__(self, x=None, y=None, w=None, h=None, value=None, text_format=None, background_color=None, writable=None, window=None):
             self.x = x
@@ -770,6 +781,7 @@ class BuckerWindow(RootObject):
 
         root.window.blit(self.surface, (1 + self.x, self.title_height + self.y))
 
+# V 프로그램 대기판(서퍼)
 class Surfer(RootObject):
     width = (root.display.size[0] - 400) / 108
     height = (root.display.size[1] - 360) / 144
@@ -882,12 +894,8 @@ class Surfer(RootObject):
         else:
             self.target_x = root.display.size[0] + 2
 
-def get_ahead_window():
-    for I in range(len(objects))[::-1]:
-        if type(objects[I]) == BuckerWindow:
-            return objects[I]
-
-def get_on_cursor_window():
+# V 커서가 가르키고 있는 윈도우를 출력함.
+def get_on_cursor_window() -> BuckerWindow:
     banned_areas = []  # [(x, y, width, height)]
     for I in range(len(objects))[::-1]:
         this_object = objects[I]
@@ -910,6 +918,7 @@ def get_on_cursor_window():
 
         banned_areas.append((this_object.x, this_object.y, this_object.width, this_object.height))
 
+# V 디버그를 위한 HUD(Head-up-display)
 class HUD(RootObject):
     state_surface: pygame.Surface
     fps_surface: pygame.Surface
@@ -939,6 +948,7 @@ def change_state(next_state):
 add_object(Bucker())
 change_state(state.lock)
 
+# V 프레임 고정을 위한 변수. 1 이상 되면 루프를 실행한다.
 delta = 0
 
 now = time.time()
@@ -1029,4 +1039,5 @@ while not root.exit:
     else:
         delta += (now - pnow) / time_per_tick
 pygame.quit()
-slo.save()
+slo.save()  # ini파일 저장
+exit()
