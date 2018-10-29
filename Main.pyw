@@ -576,22 +576,77 @@ class BuckerWindow(RootObject):
     close = pygame.transform.scale(pygame.image.load('./res/image/icon/close.png'), (20, 20)).convert_alpha()
     text_format = TextFormat(slo.slo['appearance']['font'], 18, color.background)
 
-    def __init__(self, x, y, w, h, title='BuckerWindow', border_color=slo.bucker['window']['border_color'], background_color=slo.bucker['window']['background_color'], title_height=24, move=True):
-        self.x = x
-        self.y = y
-        self.title_height = title_height
-        self.width = w + 2
-        self.height = h + self.title_height + 1
-        self.title = title
-        self.border_color = border_color
-        self.background_color = background_color
-        self.move = True
+    class TextArea(RootObject):
+        def __init__(self, x=None, y=None, w=None, h=None, value=None, text_format=None, background_color=None, window=None):
+            self.x = x
+            self.y = y
+            self.width = w
+            self.height = h
+            self.value = value
+            self.text_format = text_format
+            self.background_color = background_color
+            self.window = window
+
+            if self.x is None:
+                self.x = 0
+            if self.y is None:
+                self.y = 0
+            if self.width is None:
+                self.width = self.window.width
+            if self.height is None:
+                self.height = self.window.height
+            if self.value is None:
+                self.value = ''
+            if self.text_format is None:
+                self.text_format = TextFormat(slo.slo['appearance']['domino_font'], 18, color.text)
+            if self.background_color is None:
+                self.background_color = color.background
+
+            self.surface = pygame.Surface((self.width, self.height))
+
+        def tick(self):
+            self.surface.fill(self.background_color)
+            values = self.value.split('\n')
+            for i in range(len(values)):
+                if self.text_format.size * i < self.height:
+                    self.surface.blit(self.text_format.render(values[i]), (0, self.text_format.size * i))
+
+        def render(self):
+            self.window.surface.blit(self.surface, (self.x, self.y))
+
+    def __init__(self, program):  # x=None, y=None, w=None, h=None, title='BuckerWindow', border_color=slo.bucker['window']['border_color'], background_color=slo.bucker['window']['background_color'], title_height=24
+        # self.x = x
+        # self.y = y
+        # self.title_height = title_height
+        # self.width = w + 2
+        # self.height = h + self.title_height + 1
+        # self.title = title
+        # self.border_color = border_color
+        # self.background_color = background_color
+        self.program = program
+
+        self.x = 0
+        self.y = 0
+        self.title_height = 24
+        self.width = 150
+        self.height = 150 + self.title_height + 1
+        self.title = 'BuckerWindow'
+        self.border_color = slo.bucker['window']['border_color']
+        self.background_color = slo.bucker['window']['background_color']
+
+        self.elements = []
+        self.build_program(self.program)
+
+        if self.title == 'BuckerWindow':
+            self.title = self.program.split('/')[-1]
+            if '\\' in self.title:
+                self.title = self.program.split('//')[-1]
 
         self.target_x = self.x
         self.target_y = self.y
 
-        self.x_moving = move
-        self.y_moving = move
+        self.x_moving = True
+        self.y_moving = True
 
         self.x = cursor.position[0] - self.width / 2
         self.y = cursor.position[1] - self.height / 2
@@ -611,6 +666,57 @@ class BuckerWindow(RootObject):
         self.surface.fill(self.background_color)
 
         self.build_surface()
+
+    def build_program(self, path):
+        try:
+            code = open(path, 'r').read().split('\n')
+        except UnicodeDecodeError:
+            code = open(path, 'r', encoding='utf-8').read().split('\n')
+
+        for line in code:
+            if '?' in line: line = line[:line.index('?')]
+            if len(line) <= 0: continue
+            while line[-1] == ' ': line = line[:-1]
+
+            sline = line.split()
+
+            if sline[0] == 'window-set':
+                if sline[1] == 'x': self.x = eval(' '.join(sline[2:]))
+                if sline[1] == 'y': self.y = eval(' '.join(sline[2:]))
+                if sline[1] == 'title_height': self.title_height = eval(' '.join(sline[2:]))
+                if sline[1] == 'width': self.width = eval(' '.join(sline[2:]))
+                if sline[1] == 'height': self.height = eval(' '.join(sline[2:]))
+                if sline[1] == 'title': self.title = eval(' '.join(sline[2:]))
+                if sline[1] == 'border_color': self.border_color = eval(' '.join(sline[2:]))
+                if sline[1] == 'background_color': self.background_color = eval(' '.join(sline[2:]))
+
+            elif sline[0] == 'add':
+                arguments = {}
+                last_key = ''
+
+                if sline[1] == 'TextArea':
+                    keys = ('x', 'y', 'w', 'h', 'value', 'text_format', 'background_color')
+
+                    for key in keys:
+                        arguments[key] = None
+
+                    for i in range(len(sline)):
+                        i += 2
+                        try:
+                            word = sline[i]
+                        except IndexError:
+                            break
+
+                        if i % 2 == 1:
+                            if '_' in word: word = word.replace('_', ' ')
+                            if '\\ ' in word: word = word.replace('\\ ', '_')
+
+                            arguments[last_key] = eval(word)
+                        else:
+                            if word in keys:
+                                last_key = word
+
+                    self.elements.append(self.TextArea(x=arguments['x'], y=arguments['y'], w=arguments['w'], h=arguments['h'], value=arguments['value'], text_format=arguments['text_format'], background_color=arguments['background_color'], window=self))
 
     def build_surface(self):
         title_surface = self.text_format.render(self.title)
@@ -673,12 +779,16 @@ class BuckerWindow(RootObject):
             if self.x + self.width - self.title_height <= cursor.position[0] <= self.x + self.width and self.y <= cursor.position[1] <= self.y + self.title_height and get_on_cursor_window() == self:
                 self.exit = True
 
+        for element in self.elements:
+            element.tick()
+
     def render(self):
         root.window.blit(self.window, (self.x, self.y))
 
-    @staticmethod
-    def add(bucker_window):
-        add_object(bucker_window)
+        for element in self.elements:
+            element.render()
+
+        root.window.blit(self.surface, (1 + self.x, self.title_height + self.y))
 
 class Surfer(RootObject):
     width = (root.display.size[0] - 400) / 108

@@ -1,0 +1,6 @@
+window-set x 600
+window-set y 400
+window-set width 600
+window-set height 400
+
+add TextArea value 'Hello,_world'
