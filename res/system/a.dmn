@@ -1,9 +1,9 @@
-? SloOS 기본 프로그램.
-? 스치가 만들고 있습니다.
-
 window-set width 600
 window-set height 400
 window-set x center(root.display.size[0], self.width)
 window-set y center(root.display.size[1], self.height)
 
-add TextArea value 'Hello,_world' writable False
+set $hello 'Hello'
+set $boo
+
+add TextArea value $hello writable False

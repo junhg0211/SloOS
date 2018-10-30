@@ -179,6 +179,8 @@ class TextFormat:
     def render(self, text):
         return self.font.render(text, True, self.color)
 
+default_text_format = TextFormat(slo.slo['appearance']['font'], 18, color.text)
+
 # V 잠금화면(락스크린) 오브젝트
 class LockScreen(RootObject):
     time_surface: pygame.Surface
@@ -358,7 +360,7 @@ class Shutdown(RootObject):
     immediate = 'Shutdown.mode.IMMEDIATE'
 
     class Button(RootObject):
-        text_format = TextFormat(slo.slo['appearance']['font'], 18, color.text)
+        text_format = default_text_format
 
         def __init__(self, surface, text, action, shutdown):
             self.surface = surface
@@ -451,7 +453,7 @@ class Bucker(RootObject):
     background_image = pygame.transform.smoothscale(pygame.image.load(slo.bucker['background']['image_path']), (slo.slo['display']['size'][0], slo.slo['display']['size'][1])).convert()
 
     class DockItem(RootObject):
-        text_format = TextFormat(slo.slo['appearance']['font'], 18, color.text)
+        text_format = default_text_format
 
         def __init__(self, surface, action, text, dock_bucker):
             self.surface = surface
@@ -624,13 +626,18 @@ class BuckerWindow(RootObject):
         self.highlighted_border_color = slo.bucker['window']['highlighted_border_color']
         self.background_color = slo.bucker['window']['background_color']
 
-        self.elements = []
-        self.build_program(self.program)
+        self.exit = False
 
         if self.title == 'BuckerWindow':
             self.title = self.program.split('/')[-1]
             if '\\' in self.title:
                 self.title = self.program.split('//')[-1]
+
+        self.elements = []
+        try:
+            self.build_program(self.program)
+        except SyntaxError:
+            self.exit = True
 
         self.target_x = self.x
         self.target_y = self.y
@@ -649,8 +656,6 @@ class BuckerWindow(RootObject):
         self.start_moving_x = None
         self.start_moving_y = None
 
-        self.exit = False
-
         self.window = pygame.Surface((0, 0))
         self.surface = pygame.Surface((self.width - 2, self.height - self.title_height - 1))
         self.surface.fill(self.background_color)
@@ -658,12 +663,20 @@ class BuckerWindow(RootObject):
         self.build_surface()
 
     def build_program(self, path):
+        def exception(message):
+            add_object(Alert(self.title, f'현재 실행하고 있는 프로그램의 {line_number + 1}번째 줄에 다음과 같은 오류가 발견되었습니다: \n' + message))
+            raise SyntaxError(message)
+
         try:
             code = open(path, 'r').read().split('\n')
         except UnicodeDecodeError:
             code = open(path, 'r', encoding='utf-8').read().split('\n')
 
-        for line in code:
+        variables = {}
+
+        for line_number in range(len(code)):
+            line = code[line_number]
+
             if '?' in line: line = line[:line.index('?')]
             if len(line) <= 0: continue
             while line[-1] == ' ': line = line[:-1]
@@ -681,7 +694,18 @@ class BuckerWindow(RootObject):
                 if sline[1] == 'background_color': self.background_color = eval(' '.join(sline[2:]))
                 if sline[1] == 'highlighted_background_color': self.highlighted_border_color = eval(' '.join(sline[2:]))
 
+            elif sline[0] == 'set':
+                if len(sline) < 3:
+                    exception('set 구문의 변수 이름 또는 변수 값이 지정되어 있지 않습니다.')
+
+                try:
+                    variables[sline[1]] = eval(' '.join(sline[2:]))
+                except Exception as e:
+                    exception(str(e))
             elif sline[0] == 'add':
+                if len(sline) < 2:
+                    exception('add 구문의 변수형이 지정되어 있지 않습니다.')
+
                 arguments = {}
                 last_key = ''
 
@@ -703,11 +727,22 @@ class BuckerWindow(RootObject):
                             if '\\ ' in word: word = word.replace('\\ ', '_')
 
                             if last_key in keys:
-                                arguments[last_key] = eval(word)
+                                if word[0] == '$':
+                                    arguments[last_key] = variables[word]
+                                else:
+                                    arguments[last_key] = eval(word)
                         else:
                             last_key = word
 
                     self.elements.append(self.TextArea(x=arguments['x'], y=arguments['y'], w=arguments['w'], h=arguments['h'], value=arguments['value'], text_format=arguments['text_format'], background_color=arguments['background_color'], writable=arguments['writable'], window=self))
+
+                else:
+                    exception(f'변수형 {sline[1]}을(를) 알 수 없습니다.')
+
+            else:
+                exception(f'명령어 {sline[0]}을(를) 알 수 없습니다.')
+
+        return False
 
     def build_surface(self):
         title_surface = self.text_format.render(self.title)
@@ -723,7 +758,7 @@ class BuckerWindow(RootObject):
         self.window.blit(self.close, (self.width - self.close.get_width() - 2, 2))
         self.window.blit(title_surface, (center(self.width, title_surface.get_width()), 0))
 
-        self.surface = self.surface.convert()
+        # self.surface = self.surface.convert()
 
     def tick(self):
         if self.x_moving:
@@ -793,7 +828,7 @@ class Surfer(RootObject):
     right = 'Surfer.right'
 
     class Button(RootObject):
-        text_format = TextFormat(slo.slo['appearance']['font'], 18, color.text)
+        text_format = default_text_format
 
         def __init__(self, surface, text, surfer, command=None):
             self.surface = surface
@@ -893,6 +928,57 @@ class Surfer(RootObject):
             self.target_x = -root.display.size[0] - 2
         else:
             self.target_x = root.display.size[0] + 2
+
+# V 알림, 경고 등 창
+class Alert(RootObject):
+    # error = 'Alert.error'
+    # info = 'Alert.info'
+
+    def __init__(self, title: str, message: str, kind=None, background_color=color.black, background_opacity=127, title_text_format=TextFormat(slo.slo['appearance']['font'], 32, color.text), text_format=default_text_format, gap=20):
+        self.title = title
+        self.messages = message
+        self.kind = kind
+        self.background_color = background_color
+        self.background_opacity = background_opacity
+        self.title_text_format = title_text_format
+        self.message_text_format = text_format
+        self.gap = gap
+
+        self.background_surface = pygame.Surface(root.display.size)
+        self.background_surface.fill(self.background_color)
+        self.background_surface.set_alpha(self.background_opacity)
+
+        self.title_surface = self.title_text_format.render(self.title)
+        self.title_x = center(root.display.size[0], self.title_surface.get_width())
+
+        self.message_surfaces = []
+        self.message_xs = []
+        for message in self.messages.split('\n'):
+            self.message_surfaces.append(self.message_text_format.render(message))
+            self.message_xs.append(center(root.display.size[0], self.message_surfaces[-1].get_width()))
+
+        self.title_y = center(root.display.size[1], self.title_surface.get_height() + self.gap + len(self.message_surfaces) * self.message_text_format.size)
+        self.message_ys = []
+        for i in range(len(self.message_surfaces)):
+            self.message_ys.append(self.title_y + self.title_surface.get_height() + self.gap + i * self.message_surfaces[i].get_height())
+
+    def tick(self):
+        RootObject.highlight = Alert
+        self.ahead()
+
+        if cursor.fpressed[0]:
+            self.destroy()
+
+    def render(self):
+        root.window.blit(self.background_surface, (0, 0))
+
+        root.window.blit(self.title_surface, (self.title_x, self.title_y))
+        for i in range(len(self.message_surfaces)):
+            root.window.blit(self.message_surfaces[i], (self.message_xs[i], self.message_ys[i]))
+
+    def destroy(self):
+        RootObject.highlight = None
+        super().destroy()
 
 # V 커서가 가르키고 있는 윈도우를 출력함.
 def get_on_cursor_window() -> BuckerWindow:
