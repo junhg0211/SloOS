@@ -6,4 +6,4 @@ window-set y center(root.display.size[1], self.height)
 set $hello 'Hello'
 set $boo
 
-add TextArea value $hello writable False
+window-add TextArea value $hello writable False

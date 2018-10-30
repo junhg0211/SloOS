@@ -682,8 +682,16 @@ class BuckerWindow(RootObject):
             while line[-1] == ' ': line = line[:-1]
 
             sline = line.split()
+            if sline[0] == 'set':
+                if len(sline) < 3:
+                    exception('set 구문의 변수 이름 또는 변수 값이 지정되어 있지 않습니다.')
 
-            if sline[0] == 'window-set':
+                try:
+                    variables[sline[1]] = eval(' '.join(sline[2:]))
+                except Exception as e:
+                    exception(str(e))
+
+            elif sline[0] == 'window-set':
                 if sline[1] == 'x': self.x = eval(' '.join(sline[2:]))
                 if sline[1] == 'y': self.y = eval(' '.join(sline[2:]))
                 if sline[1] == 'title_height': self.title_height = eval(' '.join(sline[2:]))
@@ -694,17 +702,9 @@ class BuckerWindow(RootObject):
                 if sline[1] == 'background_color': self.background_color = eval(' '.join(sline[2:]))
                 if sline[1] == 'highlighted_background_color': self.highlighted_border_color = eval(' '.join(sline[2:]))
 
-            elif sline[0] == 'set':
-                if len(sline) < 3:
-                    exception('set 구문의 변수 이름 또는 변수 값이 지정되어 있지 않습니다.')
-
-                try:
-                    variables[sline[1]] = eval(' '.join(sline[2:]))
-                except Exception as e:
-                    exception(str(e))
-            elif sline[0] == 'add':
+            elif sline[0] == 'window-add':
                 if len(sline) < 2:
-                    exception('add 구문의 변수형이 지정되어 있지 않습니다.')
+                    exception('window-add 구문의 변수형이 지정되어 있지 않습니다.')
 
                 arguments = {}
                 last_key = ''
@@ -741,6 +741,7 @@ class BuckerWindow(RootObject):
 
             else:
                 exception(f'명령어 {sline[0]}을(를) 알 수 없습니다.')
+
 
         return False
 
