@@ -115,6 +115,8 @@ class root:
 class keyboard:
     lalt = False
     ralt = False
+    lctrl = False
+    rctrl = False
     space = False
     escape = False
 
@@ -560,20 +562,53 @@ class Bucker(RootObject):
 # V 모든 윈도우(창) 오브젝트
 class BuckerWindow(RootObject):
     close = pygame.transform.scale(pygame.image.load('./res/image/icon/close.png'), (20, 20)).convert_alpha()
-    text_format = TextFormat(slo.slo['appearance']['font'], 18, color.background)
+    text_format = default_text_format
 
-    # V 입력할 수 있는 큰 입력판
-    class TextArea(RootObject):
-        def __init__(self, x=None, y=None, w=None, h=None, value=None, text_format=None, background_color=None, writable=None, window=None):
+    class BuckerWindowElement(RootObject):
+        def __init__(self, window):
+            self.window = window
+
+            self.x = 0
+            self.y = 0
+            self.surface = pygame.Surface((0, 0))
+
+        def render(self):
+            # root.window.blit(self.surface, (1 + self.window.x + self.x, self.window.title_height + self.window.y + self.y))
+            self.window.surface.blit(self.surface, (self.x, self.y))
+
+    class Text(BuckerWindowElement):
+        def __init__(self, x=None, y=None, text=None, text_format=None, window=None):
+            super().__init__(window)
+
             self.x = x
             self.y = y
-            self.width = w
-            self.height = h
+            self.text = text
+            self.text_format = text_format
+
+            if self.x is None:
+                self.x = 0
+            if self.y is None:
+                self.y = 0
+            if self.text is None:
+                self.text = ''
+            if self.text_format is None:
+                self.text_format = TextFormat(slo.slo['appearance']['font'], 18, color.background)
+
+            self.surface = self.text_format.render(self.text)
+
+    # V 입력할 수 있는 큰 입력판
+    class TextArea(BuckerWindowElement):
+        def __init__(self, x=None, y=None, width=None, height=None, value=None, text_format=None, background_color=None, writable=None, window=None):
+            super().__init__(window)
+
+            self.x = x
+            self.y = y
+            self.width = width
+            self.height = height
             self.value = value
             self.text_format = text_format
             self.background_color = background_color
             self.writable = writable
-            self.window = window
 
             if self.x is None:
                 self.x = 0
@@ -601,7 +636,11 @@ class BuckerWindow(RootObject):
                 if self.text_format.size * I < self.height:
                     self.surface.blit(self.text_format.render(values[I]), (0, self.text_format.size * I))
 
-            if highlighted_object == self.window:
+            if cursor.fpressed[0]:
+                if self.x + self.window.x + 1 <= cursor.position[0] <= self.x + self.window.x + 1 + self.surface.get_width() and self.y + self.window.y + self.window.title_height <= cursor.position[1] <= self.y + self.window.y + self.window.title_height + self.surface.get_height():
+                    self.window.highlighted_object = self
+
+            if highlighted_object == self.window and self.window.highlighted_object == self:
                 if self.writable and keyboard.keydown_unicode:
                     if keyboard.keydown_unicode in keyboard.input_board:
                         self.value += keyboard.keydown_unicode
@@ -610,9 +649,6 @@ class BuckerWindow(RootObject):
                     elif keyboard.keydown_unicode == '\r':
                         self.value += '\n'
 
-        def render(self):
-            self.window.surface.blit(self.surface, (self.x, self.y))
-
     def __init__(self, program):
         self.program = program
 
@@ -620,7 +656,7 @@ class BuckerWindow(RootObject):
         self.y = 0
         self.title_height = 24
         self.width = 150
-        self.height = 150 + self.title_height + 1
+        self.height = 150
         self.title = 'BuckerWindow'
         self.normal_border_color = slo.bucker['window']['normal_border_color']
         self.highlighted_border_color = slo.bucker['window']['highlighted_border_color']
@@ -638,6 +674,11 @@ class BuckerWindow(RootObject):
             self.build_program(self.program)
         except SyntaxError:
             self.exit = True
+
+        self.highlighted_object = None
+
+        self.width += 2
+        self.height += self.title_height + 1
 
         self.target_x = self.x
         self.target_y = self.y
@@ -661,6 +702,83 @@ class BuckerWindow(RootObject):
         self.surface.fill(self.background_color)
 
         self.build_surface()
+
+    def tick(self):
+        if self.x_moving:
+            self.x += (self.target_x - self.x) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
+            if math.fabs(self.x - self.target_x) < 1:
+                self.x = self.target_x
+                self.x_moving = False
+
+        if self.y_moving:
+            self.y += (self.target_y - self.y) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
+            if math.fabs(self.y - self.target_y) < 1:
+                self.y = self.target_y
+                self.y_moving = False
+
+        if self.exit:
+            self.y_moving = True
+            self.target_y = root.display.size[1] + 1
+
+            if root.display.size[1] <= self.y:
+                self.destroy()
+
+        if self.moving:
+            self.target_x = cursor.position[0] - self.start_moving_x + self.original_x
+            self.target_y = cursor.position[1] - self.start_moving_y + self.original_y
+
+            self.x_moving = True
+            self.y_moving = True
+
+        if keyboard.keydown_unicode in 'qQ' and (keyboard.lctrl or keyboard.rctrl) and highlighted_object == self:
+            self.exit = True
+
+        if cursor.fpressed[0]:
+            if self.x <= cursor.position[0] <= self.x + self.width:
+                if self.y <= cursor.position[1] <= self.y + self.title_height and get_on_cursor_window() == self:
+                    self.moving = True
+                    self.original_x = self.x
+                    self.original_y = self.y
+                    self.start_moving_x = cursor.position[0]
+                    self.start_moving_y = cursor.position[1]
+
+            if get_on_cursor_window() == self:
+                self.ahead()
+
+            self.highlighted_object = None
+
+        if cursor.epressed[0]:
+            self.moving = False
+
+            if self.x + self.width - self.title_height <= cursor.position[0] <= self.x + self.width and self.y <= cursor.position[1] <= self.y + self.title_height and get_on_cursor_window() == self:
+                self.exit = True
+
+        for element in self.elements:
+            element.tick()
+
+    def render(self):
+        root.window.blit(self.window, (self.x, self.y))
+
+        self.surface.fill(self.background_color)
+
+        for element in self.elements:
+            element.render()
+
+        root.window.blit(self.surface, (1 + self.x, self.title_height + self.y))
+
+    def build_surface(self):
+        title_surface = self.text_format.render(self.title)
+
+        border_color = self.highlighted_border_color if highlighted_object == self else self.normal_border_color
+
+        self.window = pygame.Surface((self.width, self.height))
+        self.window.fill(self.background_color)
+        pygame.draw.rect(self.window, border_color, ((0, 0), (self.width, self.title_height)))
+        pygame.draw.line(self.window, border_color, (0, 0), (0, self.height), 1)
+        pygame.draw.line(self.window, border_color, (0, self.height), (self.width, self.height), 3)
+        pygame.draw.line(self.window, border_color, (self.width, 0), (self.width, self.height), 3)
+        self.window.blit(self.close, (self.width - self.close.get_width() - 2, 2))
+        self.window.blit(title_surface, (center(self.width, title_surface.get_width()), 0))
 
     def build_program(self, path):
         def exception(message):
@@ -710,7 +828,7 @@ class BuckerWindow(RootObject):
                 last_key = ''
 
                 if sline[1] == 'TextArea':
-                    keys = ('x', 'y', 'w', 'h', 'value', 'text_format', 'background_color', 'writable')
+                    keys = ('x', 'y', 'width', 'height', 'value', 'text_format', 'background_color', 'writable')
 
                     for key in keys:
                         arguments[key] = None
@@ -734,88 +852,42 @@ class BuckerWindow(RootObject):
                         else:
                             last_key = word
 
-                    self.elements.append(self.TextArea(x=arguments['x'], y=arguments['y'], w=arguments['w'], h=arguments['h'], value=arguments['value'], text_format=arguments['text_format'], background_color=arguments['background_color'], writable=arguments['writable'], window=self))
+                    self.elements.append(self.TextArea(x=arguments['x'], y=arguments['y'], width=arguments['width'], height=arguments['height'], value=arguments['value'], text_format=arguments['text_format'], background_color=arguments['background_color'], writable=arguments['writable'], window=self))
+                elif sline[1] == 'Text':
+                    keys = ('x', 'y', 'text', 'text_format')
 
+                    for key in keys:
+                        arguments[key] = None
+
+                    for _i in range(len(sline)):
+                        _i += 2
+                        try:
+                            word = sline[_i]
+                        except IndexError:
+                            break
+
+                        if _i % 2 == 1:
+                            if '_' in word: word = word.replace('_', ' ')
+                            if '\\ ' in word: word = word.replace('\\ ', '_')
+
+                            if last_key in keys:
+                                if word[0] == '$':
+                                    if word not in variables.keys():
+                                        exception(f'{word}라는 변수는 지정되지 않았습니다.\n변수 형에 언더바(_)를 사용했을 가능성이 있습니다.')
+                                    arguments[last_key] = variables[word]
+                                else:
+                                    arguments[last_key] = eval(word)
+                        else:
+                            last_key = word
+
+                    self.elements.append(self.Text(x=arguments['x'], y=arguments['y'], text=arguments['text'], text_format=arguments['text_format'], window=self))
                 else:
                     exception(f'변수형 {sline[1]}을(를) 알 수 없습니다.')
 
             else:
                 exception(f'명령어 {sline[0]}을(를) 알 수 없습니다.')
 
-
         return False
-
-    def build_surface(self):
-        title_surface = self.text_format.render(self.title)
-
-        border_color = self.highlighted_border_color if highlighted_object == self else self.normal_border_color
-
-        self.window = pygame.Surface((self.width, self.height))
-        self.window.fill(self.background_color)
-        pygame.draw.rect(self.window, border_color, ((0, 0), (self.width, self.title_height)))
-        pygame.draw.line(self.window, border_color, (0, 0), (0, self.height), 1)
-        pygame.draw.line(self.window, border_color, (0, self.height), (self.width, self.height), 3)
-        pygame.draw.line(self.window, border_color, (self.width, 0), (self.width, self.height), 3)
-        self.window.blit(self.close, (self.width - self.close.get_width() - 2, 2))
-        self.window.blit(title_surface, (center(self.width, title_surface.get_width()), 0))
-
-        # self.surface = self.surface.convert()
-
-    def tick(self):
-        if self.x_moving:
-            self.x += (self.target_x - self.x) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
-            if math.fabs(self.x - self.target_x) < 1:
-                self.x = self.target_x
-                self.x_moving = False
-
-        if self.y_moving:
-            self.y += (self.target_y - self.y) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
-            if math.fabs(self.y - self.target_y) < 1:
-                self.y = self.target_y
-                self.y_moving = False
-
-        if self.exit:
-            self.y_moving = True
-            self.target_y = root.display.size[1] + 1
-
-            if root.display.size[1] <= self.y:
-                self.destroy()
-
-        if self.moving:
-            self.target_x = cursor.position[0] - self.start_moving_x + self.original_x
-            self.target_y = cursor.position[1] - self.start_moving_y + self.original_y
-
-            self.x_moving = True
-            self.y_moving = True
-
-        if cursor.fpressed[0]:
-            if self.x <= cursor.position[0] <= self.x + self.width:
-                if self.y <= cursor.position[1] <= self.y + self.title_height and get_on_cursor_window() == self:
-                    self.moving = True
-                    self.original_x = self.x
-                    self.original_y = self.y
-                    self.start_moving_x = cursor.position[0]
-                    self.start_moving_y = cursor.position[1]
-
-            if get_on_cursor_window() == self:
-                self.ahead()
-
-        if cursor.epressed[0]:
-            self.moving = False
-
-            if self.x + self.width - self.title_height <= cursor.position[0] <= self.x + self.width and self.y <= cursor.position[1] <= self.y + self.title_height and get_on_cursor_window() == self:
-                self.exit = True
-
-        for element in self.elements:
-            element.tick()
-
-    def render(self):
-        root.window.blit(self.window, (self.x, self.y))
-
-        for element in self.elements:
-            element.render()
-
-        root.window.blit(self.surface, (1 + self.x, self.title_height + self.y))
 
 # V 프로그램 대기판(서퍼)
 class Surfer(RootObject):
@@ -960,8 +1032,8 @@ class Alert(RootObject):
 
         self.title_y = center(root.display.size[1], self.title_surface.get_height() + self.gap + len(self.message_surfaces) * self.message_text_format.size)
         self.message_ys = []
-        for i in range(len(self.message_surfaces)):
-            self.message_ys.append(self.title_y + self.title_surface.get_height() + self.gap + i * self.message_surfaces[i].get_height())
+        for I in range(len(self.message_surfaces)):
+            self.message_ys.append(self.title_y + self.title_surface.get_height() + self.gap + I * self.message_surfaces[I].get_height())
 
     def tick(self):
         RootObject.highlight = Alert
@@ -974,8 +1046,8 @@ class Alert(RootObject):
         root.window.blit(self.background_surface, (0, 0))
 
         root.window.blit(self.title_surface, (self.title_x, self.title_y))
-        for i in range(len(self.message_surfaces)):
-            root.window.blit(self.message_surfaces[i], (self.message_xs[i], self.message_ys[i]))
+        for I in range(len(self.message_surfaces)):
+            root.window.blit(self.message_surfaces[I], (self.message_xs[I], self.message_ys[I]))
 
     def destroy(self):
         RootObject.highlight = None
@@ -1068,13 +1140,14 @@ while not root.exit:
             if event.type == pygame.QUIT:
                 root.quit()
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RALT:
-                    keyboard.ralt = True
-                elif event.key == pygame.K_LALT:
+                if event.key == pygame.K_LALT:
                     keyboard.lalt = True
-                elif event.key == pygame.K_F4:
-                    if keyboard.lalt or keyboard.ralt:
-                        root.quit()
+                elif event.key == pygame.K_RALT:
+                    keyboard.ralt = True
+                elif event.key == pygame.K_LCTRL:
+                    keyboard.lctrl = True
+                elif event.key == pygame.K_RCTRL:
+                    keyboard.rctrl = True
                 elif event.key == pygame.K_SPACE:
                     keyboard.space = True
                 elif event.key == pygame.K_ESCAPE:
@@ -1082,10 +1155,14 @@ while not root.exit:
 
                 keyboard.keydown_unicode = event.unicode
             elif event.type == pygame.KEYUP:
-                if event.key == pygame.K_RALT:
-                    keyboard.ralt = False
-                elif event.key == pygame.K_LALT:
+                if event.key == pygame.K_LALT:
                     keyboard.lalt = False
+                elif event.key == pygame.K_RALT:
+                    keyboard.ralt = False
+                elif event.key == pygame.K_LCTRL:
+                    keyboard.lctrl = False
+                elif event.key == pygame.K_RCTRL:
+                    keyboard.rctrl = False
                 elif event.key == pygame.K_SPACE:
                     keyboard.space = False
                 elif event.key == pygame.K_ESCAPE:

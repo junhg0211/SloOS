@@ -1,9 +1,11 @@
-window-set width 600
-window-set height 400
+window-set width 1280
+window-set height 720
 window-set x center(root.display.size[0], self.width)
 window-set y center(root.display.size[1], self.height)
 
 set $hello 'Hello'
-set $boo
 
-window-add TextArea value $hello writable False
+set $title-text-format TextFormat('./res/system/res/font/D2Coding.ttc', 72, (0, 0, 0))
+
+window-add TextArea value 'Hello,_world!\nIt\'s_nice_to_see_you.' width 300 y 200 height 200 x 400
+window-add Text text $hello x 300 y 100 text_format $title-text-format
