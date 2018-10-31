@@ -670,6 +670,8 @@ class BuckerWindow(RootObject):
             if '\\' in self.title:
                 self.title = self.program.split('//')[-1]
 
+        self.directory = self.program[:-len(self.title) - 1]
+
         self.elements = []
         try:
             self.build_program(self.program)
@@ -801,14 +803,51 @@ class BuckerWindow(RootObject):
             while line[-1] == ' ': line = line[:-1]
 
             sline = line.split()
-            if sline[0] == 'set':
+            if sline[0] == 'set-raw':
                 if len(sline) < 3:
-                    exception('set 구문의 변수 이름 또는 변수 값이 지정되어 있지 않습니다.')
+                    exception('set-raw 구문의 변수 이름 또는 변수 값이 지정되어 있지 않습니다.')
 
                 try:
                     variables[sline[1]] = eval(' '.join(sline[2:]))
                 except Exception as e:
                     exception(str(e))
+
+            elif sline[0] == 'set':
+                if len(sline) < 3:
+                    exception('set 구문의 변수 이름 또는 변수 값이 지정되어 있지 않습니다.')
+
+                if sline[1] == 'TextFormat':
+                    keys = ('font', 'size', 'color')
+
+                    arguments = {}
+                    for key in keys:
+                        arguments[key] = None
+
+                    for _i in range(len(sline)):
+                        _i += 3
+                        try:
+                            word = sline[_i]
+                        except IndexError:
+                            break
+
+                        if _i % 2 == 0:
+                            if '_' in word: word = word.replace('_', ' ')
+                            if '\\ ' in word: word = word.replace('\\ ', '_')
+
+                            if last_key in keys:
+                                if word[0] == '$':
+                                    arguments[last_key] = variables[word]
+                                else:
+                                    arguments[last_key] = eval(word)
+                        else:
+                            last_key = word
+
+                    arguments['font'] = arguments['font'].replace('|', '/')
+
+                    if arguments['font'][0] == '%':
+                        arguments['font'] = self.directory + arguments['font'][1:]
+
+                    variables[sline[2]] = TextFormat(font=arguments['font'], size=arguments['size'], colour=arguments['color'])
 
             elif sline[0] == 'window-set':
                 if sline[1] == 'x': self.x = eval(' '.join(sline[2:]))
@@ -877,7 +916,10 @@ class BuckerWindow(RootObject):
                                         exception(f'{word}라는 변수는 지정되지 않았습니다.\n변수 형에 언더바(_)를 사용했을 가능성이 있습니다.')
                                     arguments[last_key] = variables[word]
                                 else:
-                                    arguments[last_key] = eval(word)
+                                    try:
+                                        arguments[last_key] = eval(word)
+                                    except NameError as e:
+                                        exception(f'{e}')
                         else:
                             last_key = word
 
