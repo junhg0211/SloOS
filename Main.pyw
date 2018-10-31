@@ -121,6 +121,7 @@ class keyboard:
     escape = False
 
     keydown_unicode = ''
+    keydown_key = 0
 
     input_board = '`1234567890-=~!@#$%^&*()_+qwertyuiop[]\QWERTYUIOP{}|asdfghjkl;\'ASDFGHJKL:\"zxcvbnm,./ZXCVBNM<>?\n '
 
@@ -730,7 +731,7 @@ class BuckerWindow(RootObject):
             self.x_moving = True
             self.y_moving = True
 
-        if keyboard.keydown_unicode in 'qQ' and (keyboard.lctrl or keyboard.rctrl) and highlighted_object == self:
+        if keyboard.keydown_key == pygame.K_q and (keyboard.lctrl or keyboard.rctrl) and highlighted_object == self:
             self.exit = True
 
         if cursor.fpressed[0]:
@@ -1154,6 +1155,7 @@ while not root.exit:
                     keyboard.escape = True
 
                 keyboard.keydown_unicode = event.unicode
+                keyboard.keydown_key = event.key
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_LALT:
                     keyboard.lalt = False
@@ -1167,6 +1169,9 @@ while not root.exit:
                     keyboard.space = False
                 elif event.key == pygame.K_ESCAPE:
                     keyboard.escape = False
+
+                if event.key == keyboard.keydown_key:
+                    keyboard.keydown_key = None
 
         if root.display.display_fps is not None:
             for i in range(3):
