@@ -108,7 +108,7 @@ class root:
     if slo.slo['display']['fullscreen']:
         window = pygame.display.set_mode(display.size, pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
     else:
-        window = pygame.display.set_mode(display.size)
+        window = pygame.display.set_mode(display.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
 
     state = None
 
