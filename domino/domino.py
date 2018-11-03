@@ -39,6 +39,8 @@ def just_have(a, b):
             return False
     return True
 
+document = []
+
 line_number = 0
 while line_number < len(datas):
     if datas[line_number] != '\n':
@@ -59,6 +61,10 @@ while line_number < len(datas):
         integer = '정수'
         boolean = '불린'
 
+        condition_if = '만약'
+        condition_else = '아니면'
+        block_starter = '블럭|'
+
         true, false = 'True', 'False'
 
         popup = 'popup'
@@ -67,7 +73,7 @@ while line_number < len(datas):
         now_mode = None  # None - var name
 
         for char in datas[line_number]:
-            # print(f'\tln {line_number}\tCHAR\t{[now_word]} {[char]}\tnm {now_mode}\t{tokens}')
+            print(f'\tln {line_number + 1}\tCHAR\t{[now_word]} {[char]}\tnm {now_mode}\t{tokens}')
             if char in (' ', '\n'):
                 if now_word == ':=':
                     tokens.append((set_to,))
@@ -89,6 +95,17 @@ while line_number < len(datas):
                     now_word = ''
                 elif now_word == '**':
                     tokens.append((power,))
+                    now_word = ''
+                elif now_word == ',':
+                    pass
+                elif now_word == '?':
+                    tokens.append((block_starter,))
+                    now_word = ''
+                elif now_word == 'if':
+                    tokens.append((condition_if, ))
+                    now_word = ''
+                elif now_word == 'else':
+                    tokens.append((condition_else,))
                     now_word = ''
                 elif now_word in (true, false):
                     if now_word == true:
@@ -125,161 +142,113 @@ while line_number < len(datas):
                     now_mode = integer
                 now_word += char
 
-        while True:
-            print(f'\tln {line_number}\tTOKEN\t{tokens}')
-            if len(tokens) >= 3:
-                if tokens[-2][0] == equals:
-                    if tokens[-3][0] == tokens[-1][0]:
-                        if tokens[-1][0] == var_name:
-                            tokens = tokens[:-3] + [(boolean, var[tokens[-3][1]] == var[tokens[-1][1]])]
-                            continue
-                        else:
-                            tokens = tokens[:-3] + [(boolean, tokens[-3][1] == tokens[-1][1])]
-                            continue
-                    elif tokens[-3][0] + tokens[-1][0] in (var_name + string, string + var_name):
-                        if tokens[-3][0] == var_name:
-                            if tokens[-3][1] not in var.keys():
-                                error(filename, line_number, variable_not_found_error, f'변수 \'{tokens[-3][1]}\'을(를) 찾을 수 없습니다.')
-                            tokens = tokens[:-3] + [(boolean, var[tokens[-3][1]] == tokens[-1][1])]
-                            continue
-                        elif tokens[-3][0] == string:
-                            if tokens[-1][1] not in var.keys():
-                                error(filename, line_number, variable_not_found_error, f'변수 \'{tokens[-1][1]}\'을(를) 찾을 수 없습니다.')
-                            tokens = tokens[:-3] + [(boolean, var[tokens[-1][1]] == tokens[-3][1])]
-                            continue
-                elif tokens[-2][0] == add:
-                    if tokens[-3][0] == tokens[-1][0]:
-                        if tokens[-1][0] == var_name:
-                            tokens = tokens[:-3] + [(integer, var[tokens[-3][1]] + var[tokens[-1][1]])]
-                            continue
-                        else:
-                            tokens = tokens[:-3] + [(integer, tokens[-3][1] + tokens[-1][1])]
-                            continue
-                    elif tokens[-3][0] + tokens[-1][0] in (var_name + integer, integer + var_name):
-                        if tokens[-3][0] == var_name:
-                            if tokens[-3][1] not in var.keys():
-                                error(filename, line_number, variable_not_found_error, f'변수 \'{tokens[-3][1]}\'을(를) 찾을 수 없습니다.')
-                            tokens = tokens[:-3] + [(integer, var[tokens[-3][1]] + tokens[-1][1])]
-                            continue
-                        elif tokens[-1][0] == var_name:
-                            if tokens[-1][1] not in var.keys():
-                                error(filename, line_number, variable_not_found_error, f'변수 \'{tokens[-1][1]}\'을(를) 찾을 수 없습니다.')
-                            tokens = tokens[:-3] + [(integer, var[tokens[-1][1]] + tokens[-3][1])]
-                            continue
-                    else:
-                        error(filename, line_number, operator_invalid, f'{tokens[-3][0]}와(과) {tokens[-1][0]}은(는) {add} 연산(+)을 할 수 없는 변수형입니다.')
-                elif tokens[-2][0] == sub:
-                    if tokens[-3][0] == tokens[-1][0]:
-                        if tokens[-1][0] == var_name:
-                            tokens = tokens[:-3] + [(integer, var[tokens[-3][1]] - var[tokens[-1][1]])]
-                            continue
-                        else:
-                            tokens = tokens[:-3] + [(integer, tokens[-3][1] - tokens[-1][1])]
-                            continue
-                    elif tokens[-3][0] + tokens[-1][0] in (var_name + integer, integer + var_name):
-                        if tokens[-3][0] == var_name:
-                            if tokens[-3][1] not in var.keys():
-                                error(filename, line_number, variable_not_found_error, f'변수 \'{tokens[-3][1]}\'을(를) 찾을 수 없습니다.')
-                            tokens = tokens[:-3] + [(integer, var[tokens[-3][1]] - tokens[-1][1])]
-                            continue
-                        elif tokens[-1][0] == var_name:
-                            if tokens[-1][1] not in var.keys():
-                                error(filename, line_number, variable_not_found_error, f'변수 \'{tokens[-1][1]}\'을(를) 찾을 수 없습니다.')
-                            tokens = tokens[:-3] + [(integer, var[tokens[-1][1]] - tokens[-3][1])]
-                            continue
-                    else:
-                        error(filename, line_number, operator_invalid, f'{tokens[-3][0]}와(과) {tokens[-1][0]}은(는) {sub} 연산(-)을 할 수 없는 변수형입니다.')
-                elif tokens[-2][0] == times:
-                    if tokens[-3][0] == tokens[-1][0]:
-                        if tokens[-1][0] == var_name:
-                            tokens = tokens[:-3] + [(integer, var[tokens[-3][1]] * var[tokens[-1][1]])]
-                            continue
-                        else:
-                            tokens = tokens[:-3] + [(integer, tokens[-3][1] * tokens[-1][1])]
-                            continue
-                    elif tokens[-3][0] + tokens[-1][0] in (var_name + integer, integer + var_name):
-                        if tokens[-3][0] == var_name:
-                            if tokens[-3][1] not in var.keys():
-                                error(filename, line_number, variable_not_found_error, f'변수 \'{tokens[-3][1]}\'을(를) 찾을 수 없습니다.')
-                            tokens = tokens[:-3] + [(integer, var[tokens[-3][1]] * tokens[-1][1])]
-                            continue
-                        elif tokens[-1][0] == var_name:
-                            if tokens[-1][1] not in var.keys():
-                                error(filename, line_number, variable_not_found_error, f'변수 \'{tokens[-1][1]}\'을(를) 찾을 수 없습니다.')
-                            tokens = tokens[:-3] + [(integer, var[tokens[-1][1]] * tokens[-3][1])]
-                            continue
-                    else:
-                        error(filename, line_number, operator_invalid, f'{tokens[-3][0]}와(과) {tokens[-1][0]}은(는) {times} 연산(*)을 할 수 없는 변수형입니다.')
-                elif tokens[-2][0] == div:
-                    if tokens[-3][0] == tokens[-1][0]:
-                        if tokens[-1][0] == var_name:
-                            tokens = tokens[:-3] + [(integer, var[tokens[-3][1]] / var[tokens[-1][1]])]
-                            continue
-                        else:
-                            tokens = tokens[:-3] + [(integer, tokens[-3][1] / tokens[-1][1])]
-                            continue
-                    elif tokens[-3][0] + tokens[-1][0] in (var_name + integer, integer + var_name):
-                        if tokens[-3][0] == var_name:
-                            if tokens[-3][1] not in var.keys():
-                                error(filename, line_number, variable_not_found_error, f'변수 \'{tokens[-3][1]}\'을(를) 찾을 수 없습니다.')
-                            tokens = tokens[:-3] + [(integer, var[tokens[-3][1]] / tokens[-1][1])]
-                            continue
-                        elif tokens[-1][0] == var_name:
-                            if tokens[-1][1] not in var.keys():
-                                error(filename, line_number, variable_not_found_error, f'변수 \'{tokens[-1][1]}\'을(를) 찾을 수 없습니다.')
-                            tokens = tokens[:-3] + [(integer, var[tokens[-1][1]] / tokens[-3][1])]
-                            continue
-                    else:
-                        error(filename, line_number, operator_invalid, f'{tokens[-3][0]}와(과) {tokens[-1][0]}은(는) {div} 연산(/)을 할 수 없는 변수형입니다.')
-                elif tokens[-2][0] == power:
-                    if tokens[-3][0] == tokens[-1][0]:
-                        if tokens[-1][0] == var_name:
-                            tokens = tokens[:-3] + [(integer, var[tokens[-3][1]] ** var[tokens[-1][1]])]
-                            continue
-                        else:
-                            tokens = tokens[:-3] + [(integer, tokens[-3][1] ** tokens[-1][1])]
-                            continue
-                    elif tokens[-3][0] + tokens[-1][0] in (var_name + integer, integer + var_name):
-                        if tokens[-3][0] == var_name:
-                            if tokens[-3][1] not in var.keys():
-                                error(filename, line_number, variable_not_found_error, f'변수 \'{tokens[-3][1]}\'을(를) 찾을 수 없습니다.')
-                            tokens = tokens[:-3] + [(integer, var[tokens[-3][1]] ** tokens[-1][1])]
-                            continue
-                        elif tokens[-1][0] == var_name:
-                            if tokens[-1][1] not in var.keys():
-                                error(filename, line_number, variable_not_found_error, f'변수 \'{tokens[-1][1]}\'을(를) 찾을 수 없습니다.')
-                            tokens = tokens[:-3] + [(integer, var[tokens[-1][1]] ** tokens[-3][1])]
-                            continue
-                    else:
-                        error(filename, line_number, operator_invalid, f'{tokens[-3][0]}와(과) {tokens[-1][0]}은(는) {power} 연산(**)을 할 수 없는 변수형입니다.')
-                if tokens[0][0] + tokens[1][0] == var_name + set_to:
-                    if tokens[2][0] == string:
-                        var[tokens[0][1]] = tokens[2][1]
-                        break
-                    elif tokens[2][0] == integer:
-                        var[tokens[0][1]] = tokens[2][1]
-                        break
-                    elif tokens[2][0] == boolean:
-                        var[tokens[0][1]] = tokens[2][1]
-                        break
-            elif len(tokens) >= 2:
-                if tokens[0][0] == function_name:
-                    if tokens[0][1] == popup:
-                        if tokens[1][0] == var_name:
-                            if tokens[1][1] not in var.keys():
-                                error(filename, line_number, variable_not_found_error, f'변수 \'{tokens[1][1]}\'을(를) 찾을 수 없습니다.')
-                            print(var[tokens[1][1]])
-                            break
-                        elif tokens[1][0] == string:
-                            print(tokens[1][1])
-                            break
-                        elif tokens[1][0] == integer:
-                            print(tokens[1][1])
-                            break
-
-        print(f'\tln {line_number}\tVAR\t{var}')
+        document.append(tokens)
+        print(f'\tln {line_number + 1}\tTOKEN\t{tokens}')
+    else:
+        document.append([])
 
     line_number += 1
+
+print()
+for i in range(len(document)):
+    print(f'\tln {i}\tTOKEN\t{document[i]}')
+print()
+
+def var_to_value(_tokens):
+    for I in range(len(_tokens)):
+        if _tokens[I][0] == var_name:
+            if _tokens[I][1] in var.keys():
+                _tokens[I] = var[_tokens[I][1]]
+                print(f'\tln {line_number + 1}\tTOKEN\t{_tokens}')
+    return _tokens
+
+line_number = 0
+condition_do = None
+while line_number < len(document):
+    print(f'\tln {line_number + 1}\tTOKEN\t{document[line_number]}')
+    
+    document[line_number] = var_to_value(document[line_number])
+
+    while True:
+        if not document[line_number]:
+            break
+
+        if document[line_number][0][0] != block_starter:
+            print(f'\tln {line_number + 1}\tTOKEN\t{document[line_number]}\t{condition_do}')
+
+            if len(document[line_number]) >= 3:
+                if document[line_number][-2][0] == equals:
+                    if document[line_number][-3][0] == document[line_number][-1][0]:
+                        document[line_number] = document[line_number][:-3] + [(boolean, document[line_number][-3][1] == document[line_number][-1][1])]
+                        continue
+                elif document[line_number][-2][0] == add:
+                    if document[line_number][-3][0] == document[line_number][-1][0]:
+                        document[line_number] = document[line_number][:-3] + [(integer, document[line_number][-3][1] + document[line_number][-1][1])]
+                        continue
+                    else:
+                        error(filename, line_number, operator_invalid, f'{document[line_number][-3][0]}와(과) {document[line_number][-1][0]}은(는) {add} 연산(+)을 할 수 없는 변수형입니다.')
+                elif document[line_number][-2][0] == sub:
+                    if document[line_number][-3][0] == document[line_number][-1][0]:
+                        document[line_number] = document[line_number][:-3] + [(integer, document[line_number][-3][1] - document[line_number][-1][1])]
+                        continue
+                    else:
+                        error(filename, line_number, operator_invalid, f'{document[line_number][-3][0]}와(과) {document[line_number][-1][0]}은(는) {sub} 연산(-)을 할 수 없는 변수형입니다.')
+                elif document[line_number][-2][0] == times:
+                    if document[line_number][-3][0] == document[line_number][-1][0]:
+                        document[line_number] = document[line_number][:-3] + [(integer, document[line_number][-3][1] * document[line_number][-1][1])]
+                        continue
+                    else:
+                        error(filename, line_number, operator_invalid, f'{document[line_number][-3][0]}와(과) {document[line_number][-1][0]}은(는) {times} 연산(*)을 할 수 없는 변수형입니다.')
+                elif document[line_number][-2][0] == div:
+                    if document[line_number][-3][0] == document[line_number][-1][0]:
+                        document[line_number] = document[line_number][:-3] + [(integer, document[line_number][-3][1] / document[line_number][-1][1])]
+                        continue
+                    else:
+                        error(filename, line_number, operator_invalid, f'{document[line_number][-3][0]}와(과) {document[line_number][-1][0]}은(는) {div} 연산(/)을 할 수 없는 변수형입니다.')
+                elif document[line_number][-2][0] == power:
+                    if document[line_number][-3][0] == document[line_number][-1][0]:
+                        document[line_number] = document[line_number][:-3] + [(integer, document[line_number][-3][1] ** document[line_number][-1][1])]
+                        continue
+                    else:
+                        error(filename, line_number, operator_invalid, f'{document[line_number][-3][0]}와(과) {document[line_number][-1][0]}은(는) {power} 연산(**)을 할 수 없는 변수형입니다.')
+                if document[line_number][0][0] + document[line_number][1][0] == var_name + set_to:
+                    if document[line_number][2][0] == string:
+                        var[document[line_number][0][1]] = (string, document[line_number][2][1])
+                        break
+                    elif document[line_number][2][0] == integer:
+                        var[document[line_number][0][1]] = (integer, document[line_number][2][1])
+                        break
+                    elif document[line_number][2][0] == boolean:
+                        var[document[line_number][0][1]] = (boolean, document[line_number][2][1])
+                        break
+            elif len(document[line_number]) >= 2:
+                if document[line_number][0][0] == function_name:
+                    if document[line_number][0][1] == popup:
+                        if document[line_number][1][0] in (string, integer, boolean):
+                            print(document[line_number][1][1])
+                            break
+                elif document[line_number][0][0] == condition_if:
+                    condition_do = document[line_number][1] == (boolean, True)
+                    break
+            else:
+                if document[line_number][0][0] == condition_else:
+                    if condition_do is False:
+                        condition_do = True
+                        break
+                    elif condition_do:
+                        condition_do = False
+                        break
+                    else:
+                        error(filename, line_number, None, '으악')
+        else:
+            if condition_do:
+                del document[line_number][0]
+            else:
+                break
+
+    line_number += 1
+
+    print(f'\tln {line_number + 1}\tVAR\t{var}')
 
 print()
 print(f'경과시간: {(time.time() - start_time) * 1_000}ms')
