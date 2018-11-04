@@ -1398,6 +1398,8 @@ while not root.exit:
 
                 keyboard.drill_mode = 1
                 keyboard.drill_input = True
+                keyboard.drill_loop_remain_delay = keyboard.drill_loop_delay
+                keyboard.drill_remain_delay = keyboard.drill_delay
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_LALT:
                     keyboard.lalt = False
