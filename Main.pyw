@@ -121,9 +121,16 @@ class keyboard:
     escape = False
 
     keydown_unicode = ''
-    keydown_key = 0
+    keydown_key = None
 
     input_board = '`1234567890-=~!@#$%^&*()_+qwertyuiop[]\QWERTYUIOP{}|asdfghjkl;\'ASDFGHJKL:\"zxcvbnm,./ZXCVBNM<>?\n '
+
+    drill_delay = slo.bucker['input']['key_drill_delay']
+    drill_remain_delay = slo.bucker['input']['key_drill_delay']
+    drill_loop_delay = slo.bucker['input']['key_drill_loop_delay']
+    drill_loop_remain_delay = slo.bucker['input']['key_drill_loop_delay']
+    drill_mode = 0
+    drill_input = False
 
 class cursor:
     position = pygame.mouse.get_pos()
@@ -641,8 +648,11 @@ class BuckerWindow(RootObject):
                 if self.x + self.window.x + 1 <= cursor.position[0] <= self.x + self.window.x + 1 + self.surface.get_width() and self.y + self.window.y + self.window.title_height <= cursor.position[1] <= self.y + self.window.y + self.window.title_height + self.surface.get_height():
                     self.window.highlighted_object = self
 
+            # if keyboard.drill_input:
+            #     print('asdasd')
+
             if highlighted_object == self.window and self.window.highlighted_object == self:
-                if self.writable and keyboard.keydown_unicode:
+                if self.writable and keyboard.keydown_unicode and keyboard.drill_input:
                     if keyboard.keydown_unicode in keyboard.input_board:
                         self.value += keyboard.keydown_unicode
                     elif keyboard.keydown_unicode == '\b':
@@ -1177,8 +1187,8 @@ while not root.exit:
         cursor.position = pygame.mouse.get_pos()
         cursor.ppressed = cursor.pressed
         cursor.pressed = pygame.mouse.get_pressed()
-        if keyboard.keydown_unicode:
-            keyboard.keydown_unicode = ''
+        # if keyboard.keydown_unicode:
+        #     keyboard.keydown_unicode = ''
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 root.quit()
@@ -1198,6 +1208,9 @@ while not root.exit:
 
                 keyboard.keydown_unicode = event.unicode
                 keyboard.keydown_key = event.key
+
+                keyboard.drill_mode = 1
+                keyboard.drill_input = True
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_LALT:
                     keyboard.lalt = False
@@ -1214,11 +1227,28 @@ while not root.exit:
 
                 if event.key == keyboard.keydown_key:
                     keyboard.keydown_key = None
+                    keyboard.drill_mode = 0
 
         if root.display.display_fps is not None:
             for i in range(3):
                 cursor.fpressed[i] = not cursor.ppressed[i] and cursor.pressed[i]
                 cursor.epressed[i] = cursor.ppressed[i] and not cursor.pressed[i]
+
+            if keyboard.drill_mode == 1:
+                keyboard.drill_remain_delay -= 1 / root.display.display_fps
+                if keyboard.drill_remain_delay <= 0:
+                    keyboard.drill_mode = 2
+            elif keyboard.drill_mode == 2:
+                keyboard.drill_loop_remain_delay -= 1 / root.display.display_fps
+                if keyboard.drill_loop_remain_delay <= 0:
+                    keyboard.drill_loop_remain_delay = keyboard.drill_loop_delay
+                    keyboard.drill_input = True
+                else:
+                    keyboard.drill_input = False
+            else:
+                keyboard.drill_loop_remain_delay = keyboard.drill_loop_delay
+                keyboard.drill_remain_delay = keyboard.drill_delay
+                keyboard.drill_input = False
 
             if cursor.fpressed[0]:
                 cursor.sposition = cursor.position
@@ -1247,6 +1277,7 @@ while not root.exit:
                 if slo.slo['display']['hud']: hud.render()
                 pygame.display.update()
 
+            keyboard.drill_input = False
     else:
         delta += (now - pnow) / time_per_tick
 pygame.quit()
