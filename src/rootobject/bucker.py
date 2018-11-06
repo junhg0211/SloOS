@@ -6,7 +6,7 @@ import state
 from rootobject import rootobject
 from rootobject import shutdown
 from rootobject import surfer
-from rootobject import setting
+from rootobject.setting import setting
 from rootobject.buckerwindow import buckerwindow
 
 import pygame

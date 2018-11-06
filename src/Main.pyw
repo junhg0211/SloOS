@@ -24,10 +24,31 @@ except ModuleNotFoundError:
 
 os.chdir('\\'.join(os.path.dirname(os.path.realpath(__file__)).split('\\')[:-1]))
 
-pygame.init()
+total_lines = 0
 
-# # V slo.init()이라고 생각하면 됨
-# slo.load()
+def search(dirname):
+    global total_lines
+
+    try:
+        filenames = os.listdir(dirname)
+        for filename in filenames:
+            full_filename = os.path.join(dirname, filename)
+            if os.path.isdir(full_filename):
+                search(full_filename)
+            else:
+                ext = os.path.splitext(full_filename)[-1]
+                if ext == '.py':
+                    try:
+                        total_lines += len(open(full_filename, 'r').readlines())
+                    except UnicodeDecodeError:
+                        total_lines += len(open(full_filename, 'r', encoding='utf-8').readlines())
+    except PermissionError:
+        pass
+
+search('./src')
+print(total_lines)
+
+pygame.init()
 
 # V 이 유저가 저번에 접속한 그 PC에서 접속한 게 맞나? 아니면 화면 해상도 다시 설정해야지
 this_username = getpass.getuser()

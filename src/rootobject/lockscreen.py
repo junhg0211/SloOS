@@ -5,6 +5,7 @@ import color
 import state
 from rootobject import rootobject
 from rootobject import textformat
+from rootobject import shutdown
 
 import pygame
 import datetime
@@ -144,7 +145,7 @@ class LockScreen(rootobject.RootObject):
                 self.system_shutdown_time += 1 / root.display.display_fps
                 self.system_shutdown_surface.set_alpha(self.system_shutdown_time / self.system_shutdown_delay * 255)
                 if self.system_shutdown_delay <= self.system_shutdown_time:
-                    rootobject.add_object(rootobject.Shutdown(mode=rootobject.Shutdown.immediate))
+                    rootobject.add_object(shutdown.Shutdown(mode=shutdown.Shutdown.immediate))
             else:
                 self.system_shutdown_time = 0
                 self.system_shutdown_surface.set_alpha(None)

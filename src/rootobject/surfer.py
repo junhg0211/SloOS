@@ -3,11 +3,13 @@ import cursor
 import slo
 import keyboard
 from rootobject import rootobject
-from rootobject import setting  # 필요한 것임!
-from rootobject.buckerwindow import buckerwindow  # 필요한 것임!
+from rootobject.setting import setting
+from rootobject.buckerwindow import buckerwindow
 
 import pygame
 import math
+
+tmp = (buckerwindow.BuckerWindow, setting.Setting); del tmp
 
 # V 프로그램 대기판(서퍼)
 class Surfer(rootobject.RootObject):
