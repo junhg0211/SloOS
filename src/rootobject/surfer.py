@@ -84,7 +84,7 @@ class Surfer(rootobject.RootObject):
         self.back_button_position_x = 16
         self.back_button_position_y = 16
 
-        rootobject.RootObject.highlight = Surfer
+        rootobject.highlight = Surfer
 
     def tick(self):
         if self.moving:

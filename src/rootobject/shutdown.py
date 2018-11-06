@@ -65,7 +65,7 @@ class Shutdown(rootobject.RootObject):
         self.back_button_surface.convert()
         self.back_button_position = [16, 16]
 
-        rootobject.RootObject.highlight = Shutdown
+        rootobject.highlight = Shutdown
 
     def tick(self):
         if self.mode == self.immediate:
@@ -98,5 +98,5 @@ class Shutdown(rootobject.RootObject):
         self.moving = True
 
     def destroy(self):
-        rootobject.RootObject.highlight = None
+        rootobject.highlight = None
         super().destroy()

@@ -1,5 +1,8 @@
 # coding=utf-8
 
+import os
+os.chdir('\\'.join(os.path.dirname(os.path.realpath(__file__)).split('\\')[:-1]))
+
 import slo
 import root
 import color
@@ -12,7 +15,6 @@ from rootobject import bucker
 
 import time  # 시간 계산을 위해
 import getpass  # 컴퓨터 사용자 이름 불러오기를 위해
-import os
 
 # V 컴퓨터 pygame이 없는 사람을 위한 자동 pygame 설치 서비스
 try:
@@ -21,8 +23,6 @@ except ModuleNotFoundError:
     print('pygame 모듈이 발견되지 않았습니다. pygame 모듈을 다운로드합니다.')
     os.system('pip install pygame')
     import pygame
-
-os.chdir('\\'.join(os.path.dirname(os.path.realpath(__file__)).split('\\')[:-1]))
 
 total_lines = 0
 
@@ -103,7 +103,7 @@ while root.run:
             root.display.display_fps = 10000
 
         delta -= 1
-        
+
         cursor.position = pygame.mouse.get_pos()
         cursor.ppressed = cursor.pressed
         cursor.pressed = pygame.mouse.get_pressed()

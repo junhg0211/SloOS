@@ -44,8 +44,8 @@ class LockScreen(rootobject.RootObject):
         self.date = immediate.split()[0].split('-')[1:]
         self.time = immediate.split()[1].split(':')[:2]
 
-        if self.time[0] == '0':
-            self.time = self.time[1:]
+        if self.time[0][0] == '0':
+            self.time[0] = self.time[0][1:]
 
         self.date_surface = self.text_format_date.render('월 '.join(self.date) + '일')
         self.date_position = (self.text_format_date.size + self.x, root.display.size[1] - self.text_format_date.size - self.date_surface.get_height())
@@ -108,8 +108,8 @@ class LockScreen(rootobject.RootObject):
             now_date = immediate.split()[0].split('-')[1:]
             now_time = immediate.split()[1].split(':')[:2]
 
-            if now_time[0] == '0':
-                now_time = now_time[1:]
+            if now_time[0][0] == '0':
+                now_time[0] = now_time[0][1:]
 
             self.system_shutdown_icon_pappear = self.system_shutdown_icon_appear
             self.system_shutdown_icon_appear = cursor.position[0] >= root.display.size[0] - 5 and cursor.position[1] < 5
