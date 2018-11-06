@@ -7,9 +7,7 @@ from rootobject import textformat
 import pygame
 
 class Text(rootobject.RootObject):
-    def __init__(self, section, title_text, value_text,
-                 title_text_format=textformat.TextFormat(slo.slo['appearance']['font'], 18, color.text),
-                 value_text_format=textformat.TextFormat(slo.slo['appearance']['font'], 14, color.text)):
+    def __init__(self, section, title_text, value_text='', title_text_format=textformat.TextFormat(slo.slo['appearance']['font'], 18, color.text), value_text_format=textformat.TextFormat(slo.slo['appearance']['font'], 14, color.text)):
         self.section = section
         self.title_text = title_text
         self.value_text = value_text

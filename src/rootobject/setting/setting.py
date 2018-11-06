@@ -45,7 +45,16 @@ class Setting(rootobject.RootObject):
                 self, '시스템 정보',
                 (text.Text, ('시스템 버전', slo.slo['metadata']['version'])),
                 (text.Text, ('개발', 'Я ШTEЛO의 SloOS 팀'))
-            )
+            ),
+            section.Section(
+                self, '디자인',
+                (text.Text, ('버커', 'Bucker')),
+                (text.Text, ('잠금화면 ', 'Lock Screen')),
+                (text.Text, ('테카', 'Theme'))
+            ),
+            section.Section(
+                self, '독'
+            ),
         ]
 
     def tick(self):
