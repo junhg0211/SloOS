@@ -27,7 +27,7 @@ goto mainpage
 
 :run
 cls
-python .\Main.pyw
+python .\src\Main.pyw
 echo.
 echo Program-i jongryo doeeot-seupnida. Amu key-na nulleoseo mainpage-ro doragapnida.
 echo.
