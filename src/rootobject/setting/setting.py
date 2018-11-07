@@ -50,7 +50,7 @@ class Setting(rootobject.RootObject):
                 self, '디자인',
                 (text.Text, ('버커', 'Bucker')),
                 (text.Text, ('잠금화면 ', 'Lock Screen')),
-                (text.Text, ('테카', 'Theme'))
+                (text.Text, ('테마', 'Theme'))
             ),
             section.Section(
                 self, '독'

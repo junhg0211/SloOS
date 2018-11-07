@@ -12,7 +12,7 @@ echo                                                      MainPage
 echo ========================================================================================================================
 echo.
 echo         1. Dibeogeu                                      0. Jongryo
-echo         2. Saeksang byeongyeong
+echo         2. Saeksang byeongyeong                          .. Slo directory yeolgi
 echo.
 echo ========================================================================================================================
 echo.
@@ -22,6 +22,7 @@ set /p a=Weonha-neun gineung-eul ipryeok hago, Enter key-reul nuruseyo:
 if %a%==1 goto run
 if %a%==2 goto yet
 if %a%==0 exit
+if %a%==. start .
 
 goto mainpage
 

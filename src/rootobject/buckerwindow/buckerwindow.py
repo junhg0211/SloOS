@@ -5,9 +5,13 @@ import root
 from rootobject import rootobject
 from rootobject import textformat
 from rootobject import alert
+from rootobject import pointer
 
 import pygame
 import math
+
+resize_d = 'R_D'
+resize_s = 'R_S'
 
 # V 모든 윈도우(창) 오브젝트
 class BuckerWindow(rootobject.RootObject):
@@ -68,6 +72,10 @@ class BuckerWindow(rootobject.RootObject):
         self.surface = pygame.Surface((self.width - 2, self.height - self.title_height - 1))
         self.surface.fill(self.background_color)
 
+        self.resize_mode = None
+        self.original_width = self.width
+        self.original_height = self.height
+
         self.build_surface()
 
     def tick(self):
@@ -120,6 +128,31 @@ class BuckerWindow(rootobject.RootObject):
             if self.x + self.width - self.title_height <= cursor.position[0] <= self.x + self.width and self.y <= cursor.position[1] <= self.y + self.title_height and rootobject.get_on_cursor_window() == self:
                 self.exit = True
 
+            self.resize_mode = None
+
+        if rootobject.get_on_cursor_window() == self:
+            if self.x + self.width - 6 <= cursor.position[0] and self.y < cursor.position[1] < self.y + self.height:
+                pointer.pointer.mode = pointer.resize_width
+                if cursor.fpressed[0]:
+                    self.resize_mode = resize_d
+                    self.original_width = self.width
+            elif self.y + self.height - 6 <= cursor.position[1] and self.x < cursor.position[0] < self.x + self.width:
+                pointer.pointer.mode = pointer.resize_height
+                if cursor.fpressed[0]:
+                    self.resize_mode = resize_s
+                    self.original_height = self.height
+            else:
+                pointer.pointer.mode = pointer.normal
+        else:
+            pointer.pointer.mode = pointer.normal
+
+        if self.resize_mode is not None:
+            if self.resize_mode == resize_d:
+                self.width = self.original_width + (cursor.position[0] - cursor.sposition[0])
+            elif self.resize_mode == resize_s:
+                self.height = self.original_height + (cursor.position[1] - cursor.sposition[1])
+            self.build_surface()
+
         for element in self.elements:
             element.tick()
 
@@ -137,6 +170,8 @@ class BuckerWindow(rootobject.RootObject):
         title_surface = self.text_format.render(self.title)
 
         border_color = self.highlighted_border_color if rootobject.highlighted_object == self else self.normal_border_color
+
+        self.surface = pygame.Surface((self.width - 2, self.height - 1 - self.title_height))
 
         self.window = pygame.Surface((self.width, self.height))
         self.window.fill(self.background_color)

@@ -6,6 +6,7 @@ import color
 import cursor
 import state
 import keyboard
+import audioplayer
 from rootobject import rootobject
 from rootobject import textformat
 from rootobject import bucker
@@ -49,8 +50,6 @@ print(total_lines)
 
 pygame.init()
 
-pointer = pointer.Pointer()
-
 # V 디버그를 위한 HUD(Head-up-display)
 class HUD(rootobject.RootObject):
     state_surface: pygame.Surface
@@ -84,6 +83,8 @@ if root.display.fps is not None:
     time_per_tick = 1 / root.display.fps
 
 loop = now
+
+audioplayer.playsound('./res/sound/startup.wav')
 
 while root.run:
     pnow = now
@@ -189,13 +190,13 @@ while root.run:
                 for obj in rootobject.objects:
                     if type(obj) == rootobject.highlight or rootobject.highlight is None:
                         obj.tick()
-                pointer.tick()
+                pointer.pointer.tick()
                 if slo.slo['display']['hud']: hud.tick()
 
                 root.window.fill(color.background)
                 for obj in rootobject.objects:
                     obj.render()
-                pointer.render()
+                pointer.pointer.render()
                 if slo.slo['display']['hud']: hud.render()
                 pygame.display.update()
 

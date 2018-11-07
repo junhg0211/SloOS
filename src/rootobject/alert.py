@@ -2,6 +2,7 @@ import color
 import slo
 import root
 import cursor
+import audioplayer
 from rootobject import rootobject
 from rootobject import textformat
 
@@ -42,6 +43,8 @@ class Alert(rootobject.RootObject):
         self.message_ys = []
         for I in range(len(self.message_surfaces)):
             self.message_ys.append(self.title_y + self.title_surface.get_height() + self.gap + I * self.message_surfaces[I].get_height())
+
+        audioplayer.playsound('./res/sound/alert.wav')
 
     def tick(self):
         rootobject.highlight = Alert

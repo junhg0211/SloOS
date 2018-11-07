@@ -1,16 +1,16 @@
 window-set width 1280
 window-set height 720
-window-set x rootobject.center(root.display.size[0], self.width)
-window-set y rootobject.center(root.display.size[1], self.height)
-
-set-raw $hello 'Hello'
-
+? window-set x center(root.display.size[0], self.width)
+? window-set y rootobject.center(root.display.size[1], self.height)
+?
+? set-raw $hello 'Hello'
+?
 ? set $title-text-format TextFormat('./res/system/res/font/D2Coding.ttc', 72, (0, 0, 0))
-
-set-raw $title-text-format-font '%|res|font|D2Coding.ttc'
-set-raw $title-text-format-size 72
-set-raw $title-text-format-color (0, 0, 0)
-set TextFormat $title-text-format font $title-text-format-font size $title-text-format-size color $title-text-format-color
-
-window-add TextArea value 'Hello,_world!\nIt\'s_nice_to_see_you.' x 400 y 200 width 600 height 400
-window-add Text x 300 y 100 text_format $title-text-format text $hello
+?
+? set-raw $title-text-format-font '%|res|font|D2Coding.ttc'
+? set-raw $title-text-format-size 72
+? set-raw $title-text-format-color (0, 0, 0)
+? set TextFormat $title-text-format font $title-text-format-font size $title-text-format-size color $title-text-format-color
+?
+? window-add TextArea value 'Hello,_world!\nIt\'s_nice_to_see_you.' x 400 y 200 width 600 height 400
+? window-add Text x 300 y 100 text_format $title-text-format text $hello
