@@ -17,11 +17,16 @@ class Pointer(rootobject.RootObject):
 
         pygame.mouse.set_visible(False)
 
+        self.positions = []
+
     def tick(self):
         self.surface = self.cursors[1 if True in cursor.pressed else 0]
 
+        self.positions = [[cursor.position[i] - cursor.rel[i] for i in range(2)], cursor.position]
+
     def render(self):
-        root.window.blit(self.surface, cursor.position)
+        for position in self.positions:
+            root.window.blit(self.surface, position)
 
     def destroy(self):
         super().destroy()

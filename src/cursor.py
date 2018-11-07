@@ -7,3 +7,5 @@ fpressed = list(pressed)
 epressed = list(pressed)
 
 sposition = position
+
+rel = pygame.mouse.get_rel()

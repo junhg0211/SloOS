@@ -14,7 +14,7 @@ class Alert(rootobject.RootObject):
 
     def __init__(self, title: str, message: str, kind=None, background_color=color.background, background_opacity=127, title_text_format=textformat.TextFormat(slo.slo['appearance']['font'], 32, color.text), text_format=rootobject.default_text_format, gap=20):
         self.title = title
-        self.messages = message
+        self.messages = message + '\n\n\n화면을 왼쪽 클릭 해서 계속합니다.'
         self.kind = kind
         self.background_color = background_color
         self.background_opacity = background_opacity

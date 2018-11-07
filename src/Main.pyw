@@ -103,8 +103,7 @@ while root.run:
         cursor.position = pygame.mouse.get_pos()
         cursor.ppressed = cursor.pressed
         cursor.pressed = pygame.mouse.get_pressed()
-        # if keyboard.keydown_unicode:
-        #     keyboard.keydown_unicode = ''
+        cursor.rel = pygame.mouse.get_rel()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 root.shutdown()

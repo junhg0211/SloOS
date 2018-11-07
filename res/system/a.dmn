@@ -1,7 +1,7 @@
 window-set width 1280
 window-set height 720
-window-set x center(root.display.size[0], self.width)
-window-set y center(root.display.size[1], self.height)
+window-set x rootobject.center(root.display.size[0], self.width)
+window-set y rootobject.center(root.display.size[1], self.height)
 
 set-raw $hello 'Hello'
 
