@@ -1,8 +1,5 @@
 # coding=utf-8
 
-import os
-os.chdir('\\'.join(os.path.dirname(os.path.realpath(__file__)).split('\\')[:-1]))
-
 import slo
 import root
 import color
@@ -14,7 +11,7 @@ from rootobject import textformat
 from rootobject import bucker
 
 import time  # 시간 계산을 위해
-import getpass  # 컴퓨터 사용자 이름 불러오기를 위해
+import os
 
 # V 컴퓨터 pygame이 없는 사람을 위한 자동 pygame 설치 서비스
 try:
@@ -24,6 +21,7 @@ except ModuleNotFoundError:
     os.system('pip install pygame')
     import pygame
 
+# os.chdir('\\'.join(os.path.dirname(os.path.realpath(__file__)).split('\\')[:-1]))
 total_lines = 0
 
 def search(dirname):
@@ -50,14 +48,6 @@ print(total_lines)
 
 pygame.init()
 
-# V 이 유저가 저번에 접속한 그 PC에서 접속한 게 맞나? 아니면 화면 해상도 다시 설정해야지
-this_username = getpass.getuser()
-if this_username != slo.lastest['user']['username']:
-    slo.lastest['user']['username'] = this_username
-    current_main_display = pygame.display.Info()
-    slo.slo['display']['size'] = (current_main_display.current_w, current_main_display.current_h)
-    slo.slo['display']['fullscreen'] = True
-
 # V 디버그를 위한 HUD(Head-up-display)
 class HUD(rootobject.RootObject):
     state_surface: pygame.Surface
@@ -80,10 +70,13 @@ if slo.slo['display']['hud']:
 rootobject.add_object(bucker.Bucker())
 state.change_state(state.lock)
 
+highlighted_object = None
+
 # V 프레임 고정을 위한 변수. 1 이상 되면 루프를 실행한다.
 delta = 0
 
 now = time.time()
+time_per_tick = 0
 if root.display.fps is not None:
     time_per_tick = 1 / root.display.fps
 

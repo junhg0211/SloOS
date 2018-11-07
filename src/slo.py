@@ -1,5 +1,8 @@
 import configparser
 import codecs
+import os
+
+os.chdir('\\'.join(os.path.dirname(os.path.realpath(__file__)).split('\\')[:-1]))
 
 slo = None
 bucker = None
