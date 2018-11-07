@@ -12,7 +12,7 @@ class Alert(rootobject.RootObject):
     # error = 'Alert.error'
     # info = 'Alert.info'
 
-    def __init__(self, title: str, message: str, kind=None, background_color=color.black, background_opacity=127, title_text_format=textformat.TextFormat(slo.slo['appearance']['font'], 32, color.text), text_format=rootobject.default_text_format, gap=20):
+    def __init__(self, title: str, message: str, kind=None, background_color=color.background, background_opacity=127, title_text_format=textformat.TextFormat(slo.slo['appearance']['font'], 32, color.text), text_format=rootobject.default_text_format, gap=20):
         self.title = title
         self.messages = message
         self.kind = kind
@@ -23,8 +23,11 @@ class Alert(rootobject.RootObject):
         self.gap = gap
 
         self.background_surface = pygame.Surface(root.display.size)
-        self.background_surface.fill(self.background_color)
-        self.background_surface.set_alpha(self.background_opacity)
+        self.background_surface.blit(root.window, (0, 0))
+        black_surface = pygame.Surface(root.display.size)
+        black_surface.fill(self.background_color)
+        black_surface.set_alpha(self.background_opacity)
+        self.background_surface.blit(black_surface, (0, 0))
 
         self.title_surface = self.title_text_format.render(self.title)
         self.title_x = rootobject.center(root.display.size[0], self.title_surface.get_width())

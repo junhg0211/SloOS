@@ -9,6 +9,7 @@ import keyboard
 from rootobject import rootobject
 from rootobject import textformat
 from rootobject import bucker
+from rootobject import pointer
 
 import time  # 시간 계산을 위해
 import os
@@ -47,6 +48,8 @@ search('./src')
 print(total_lines)
 
 pygame.init()
+
+pointer = pointer.Pointer()
 
 # V 디버그를 위한 HUD(Head-up-display)
 class HUD(rootobject.RootObject):
@@ -187,11 +190,13 @@ while root.run:
                 for obj in rootobject.objects:
                     if type(obj) == rootobject.highlight or rootobject.highlight is None:
                         obj.tick()
+                pointer.tick()
                 if slo.slo['display']['hud']: hud.tick()
 
                 root.window.fill(color.background)
                 for obj in rootobject.objects:
                     obj.render()
+                pointer.render()
                 if slo.slo['display']['hud']: hud.render()
                 pygame.display.update()
 
