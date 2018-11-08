@@ -6,6 +6,8 @@ from rootobject import rootobject
 from rootobject import textformat
 from rootobject import alert
 from rootobject import pointer
+from rootobject.buckerwindow import text
+from rootobject.buckerwindow import textarea
 
 import pygame
 import math
@@ -302,7 +304,7 @@ class BuckerWindow(rootobject.RootObject):
                         else:
                             last_key = word
 
-                    self.elements.append(self.TextArea(x=arguments['x'], y=arguments['y'], width=arguments['width'], height=arguments['height'], value=arguments['value'], text_format=arguments['text_format'], background_color=arguments['background_color'], writable=arguments['writable'], window=self))
+                    self.elements.append(textarea.TextArea(x=arguments['x'], y=arguments['y'], width=arguments['width'], height=arguments['height'], value=arguments['value'], text_format=arguments['text_format'], background_color=arguments['background_color'], writable=arguments['writable'], window=self))
                 elif sline[1] == 'Text':
                     keys = ('x', 'y', 'text', 'text_format')
 
@@ -333,7 +335,7 @@ class BuckerWindow(rootobject.RootObject):
                         else:
                             last_key = word
 
-                    self.elements.append(self.Text(x=arguments['x'], y=arguments['y'], text=arguments['text'], text_format=arguments['text_format'], window=self))
+                    self.elements.append(text.Text(x=arguments['x'], y=arguments['y'], text=arguments['text'], text_format=arguments['text_format'], window=self))
                 else:
                     exception(f'변수형 {sline[1]}을(를) 알 수 없습니다.')
 
