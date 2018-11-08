@@ -75,6 +75,9 @@ class BuckerWindow(rootobject.RootObject):
         self.resize_mode = None
         self.original_width = self.width
         self.original_height = self.height
+        
+        self.minimum_width = 100
+        self.minimum_height = 100
 
         self.build_surface()
 
@@ -149,8 +152,12 @@ class BuckerWindow(rootobject.RootObject):
         if self.resize_mode is not None:
             if self.resize_mode == resize_d:
                 self.width = self.original_width + (cursor.position[0] - cursor.sposition[0])
+                if self.width < self.minimum_width:
+                    self.width = self.minimum_width
             elif self.resize_mode == resize_s:
                 self.height = self.original_height + (cursor.position[1] - cursor.sposition[1])
+                if self.height < self.minimum_height:
+                    self.height = self.minimum_height
             self.build_surface()
 
         for element in self.elements:
