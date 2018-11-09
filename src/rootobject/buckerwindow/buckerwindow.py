@@ -77,6 +77,10 @@ class BuckerWindow(rootobject.RootObject):
         self.resize_mode = None
         self.original_width = self.width
         self.original_height = self.height
+        self.width_target = self.width
+        self.height_target = self.height
+        self.width_move = False
+        self.height_move = False
         
         self.minimum_width = 100
         self.minimum_height = 100
@@ -153,13 +157,31 @@ class BuckerWindow(rootobject.RootObject):
 
         if self.resize_mode is not None:
             if self.resize_mode == resize_d:
-                self.width = self.original_width + (cursor.position[0] - cursor.sposition[0])
-                if self.width < self.minimum_width:
-                    self.width = self.minimum_width
+                self.width_target = self.original_width + (cursor.position[0] - cursor.sposition[0])
+                self.width_move = True
+                if self.width_target < self.minimum_width:
+                    self.width_target = self.minimum_width
             elif self.resize_mode == resize_s:
-                self.height = self.original_height + (cursor.position[1] - cursor.sposition[1])
-                if self.height < self.minimum_height:
-                    self.height = self.minimum_height
+                self.height_target = self.original_height + (cursor.position[1] - cursor.sposition[1])
+                self.height_move = True
+                if self.height_target < self.minimum_height:
+                    self.height_target = self.minimum_height
+
+        if self.width_move:
+            self.width += (self.width_target - self.width) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
+            if math.fabs(self.width_target - self.width) < 1:
+                self.width = self.width_target
+                self.width_move = False
+                self.build_surface()
+        
+        if self.height_move:
+            self.height += (self.height_target - self.height) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
+            if math.fabs(self.height_target - self.height) < 1:
+                self.height = self.height_target
+                self.height_move = False
+                self.build_surface()
+
+        if self.resize_mode is not None or self.width_move or self.height_move:
             self.build_surface()
 
         for element in self.elements:
@@ -180,7 +202,7 @@ class BuckerWindow(rootobject.RootObject):
 
         border_color = self.highlighted_border_color if rootobject.highlighted_object == self else self.normal_border_color
 
-        self.surface = pygame.Surface((self.width - 2, self.height - 1 - self.title_height))
+        self.surface = pygame.Surface((round(self.width - 2), round(self.height - 1 - self.title_height)))
 
         self.window = pygame.Surface((self.width, self.height))
         self.window.fill(self.background_color)
