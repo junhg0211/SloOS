@@ -48,8 +48,6 @@ def search(dirname):
 search('./src')
 print(total_lines)
 
-pygame.init()
-
 # V 디버그를 위한 HUD(Head-up-display)
 class HUD(rootobject.RootObject):
     state_surface: pygame.Surface
