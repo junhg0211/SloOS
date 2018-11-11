@@ -2,6 +2,7 @@ import slo
 
 import pygame
 import socket
+import os
 
 pygame.init()
 
@@ -27,16 +28,21 @@ def shutdown(*_):
 
     run = False
 
+def center(x, y):
+    return (x - y) // 2
+
 window = None
+now_display = pygame.display.Info()
+now_display_size = (now_display.current_w, now_display.current_h)
 if slo.slo['display']['fullscreen']:
     try:
         window = pygame.display.set_mode(display.size, pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
     except pygame.error:
-        now_display = pygame.display.Info()
-        display.size = [now_display.current_w, now_display.current_h]
+        display.size = now_display_size
         slo.slo['display']['size'] = display.size
         window = pygame.display.set_mode(display.size, pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF)
 else:
-    window = pygame.display.set_mode(display.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
+    os.environ['SDL_VIDEO_WINDOW_POS'] = f'{center(now_display_size[0], display.size[0])},{center(now_display_size[1], display.size[1])}'
+    window = pygame.display.set_mode(display.size, pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.NOFRAME)
 
 state = None
