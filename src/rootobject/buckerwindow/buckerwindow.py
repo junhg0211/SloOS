@@ -20,7 +20,7 @@ class BuckerWindow(rootobject.RootObject):
     close = pygame.transform.scale(pygame.image.load('./res/image/icon/close.png'), (20, 20)).convert_alpha()
     text_format = rootobject.default_text_format
 
-    def __init__(self, program):
+    def __init__(self, program: str):
         self.program = program
 
         self.x = 0

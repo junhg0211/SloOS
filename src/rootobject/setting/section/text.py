@@ -1,12 +1,12 @@
 import root
 import color
 import slo
-from rootobject import rootobject
 from rootobject import textformat
+from rootobject.setting.section import sectionelement
 
 import pygame
 
-class Text(rootobject.RootObject):
+class Text(sectionelement.SectionElement):
     def __init__(self, section, title_text, value_text='', title_text_format=textformat.TextFormat(slo.slo['appearance']['font'], 18, color.text), value_text_format=textformat.TextFormat(slo.slo['appearance']['font'], 14, color.text)):
         self.section = section
         self.title_text = title_text

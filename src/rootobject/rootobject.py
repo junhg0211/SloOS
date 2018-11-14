@@ -26,7 +26,8 @@ class RootObject(object):
         pass
 
     def destroy(self):
-        objects.remove(self)
+        if self in objects:
+            objects.remove(self)
 
     def ahead(self):
         objects.remove(self)

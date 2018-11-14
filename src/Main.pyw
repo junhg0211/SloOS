@@ -50,7 +50,6 @@ print(total_lines)
 
 # V 디버그를 위한 HUD(Head-up-display)
 class HUD(rootobject.RootObject):
-    state_surface: pygame.Surface
     fps_surface: pygame.Surface
     objects_surface: pygame.Surface
     text_format = textformat.TextFormat('./res/font/consola.ttf', 20, color.text)

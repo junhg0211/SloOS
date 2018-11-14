@@ -16,13 +16,13 @@ class Section(rootobject.RootObject):
         self.name = name
         self.arguments = elements
 
+        self.is_open = False
+
+        self.x = self.setting.gap - 4
+
         self.elements = []
         for argument in self.arguments:
             self.elements.append(argument[0](self, *argument[1]))
-
-        self.is_open = False
-
-        self.x = 12
 
         self.header_width = self.setting.width - 25
         self.header = pygame.Surface((self.header_width, self.header_height))
@@ -89,12 +89,12 @@ class Section(rootobject.RootObject):
         self.less_surface_position = (self.x + self.setting.x + self.header_width - self.header_height + (self.header_height - self.less_surface.get_width()) / 2, self.y + (self.header_height - self.less_surface.get_height()) / 2)
 
     def render(self):
+        root.window.blit(self.header, (self.x + self.setting.x, self.y))
+        root.window.blit(self.less_surface, self.less_surface_position)
+        root.window.blit(self.name_surface, (self.x + 12 + self.setting.x, self.y + 9))
+
         if self.is_open:
             root.window.blit(self.element_background_surface, (self.x + self.setting.x, self.y + 40))
 
             for element in self.elements:
                 element.render()
-
-        root.window.blit(self.header, (self.x + self.setting.x, self.y))
-        root.window.blit(self.less_surface, self.less_surface_position)
-        root.window.blit(self.name_surface, (self.x + 12 + self.setting.x, self.y + 9))

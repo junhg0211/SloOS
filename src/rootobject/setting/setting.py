@@ -7,6 +7,7 @@ from rootobject import rootobject
 from rootobject import textformat
 from rootobject.setting.section import section
 from rootobject.setting.section import text
+from rootobject.setting.section import slider
 
 import pygame
 import math
@@ -30,6 +31,7 @@ class Setting(rootobject.RootObject):
         self.x = -self.width - self.gap
         self.x_moving = True
         self.x_target = self.gap
+        self.y = self.gap
 
         self.setting_logo_surface = pygame.transform.smoothscale(pygame.image.load('./res/image/icon/setting.png'), (19, 19)).convert_alpha()
         self.setting_text_surface = textformat.TextFormat(slo.slo['appearance']['font'], 17, color.text).render('설정')
@@ -55,6 +57,10 @@ class Setting(rootobject.RootObject):
             section.Section(
                 self, '독'
             ),
+            section.Section(
+                self, '테스트',
+                (slider.Slider, ('테스트 슬라이더', ('안녕', '반가워')))
+            )
         ]
 
     def tick(self):
@@ -74,15 +80,34 @@ class Setting(rootobject.RootObject):
         if self.x <= -410 and self.quit:
             self.destroy()
 
-        if keyboard.escape or (cursor.fpressed[0] and not (self.x <= cursor.position[0] <= self.x + self.width and self.gap <= cursor.position[1] <= self.gap + self.height)) or (cursor.fpressed[0] and self.back_button_position[0] <= cursor.position[0] <= self.back_button_position[0] + self.back_button_surface.get_width() and self.back_button_position[1] <= cursor.position[1] <= self.back_button_position[1] + self.back_button_surface.get_height()):
+        # TODO VV slider 핸들하기
+        if (cursor.fpressed[0] and not (self.x <= cursor.position[0] <= self.x + self.width and self.gap <= cursor.position[1] <= self.gap + self.height)) or (cursor.fpressed[0] and self.back_button_position[0] <= cursor.position[0] <= self.back_button_position[0] + self.back_button_surface.get_width() and self.back_button_position[1] <= cursor.position[1] <= self.back_button_position[1] + self.back_button_surface.get_height()):
+            opened = False
+            for SECTION in self.sections:
+                if opened:
+                    break
+                for SECTIONELEMENT in SECTION.elements:
+                    try:
+                        if SECTIONELEMENT.get_open():
+                            opened = True
+                            break
+                    except AttributeError:
+                        pass
+            if opened:
+                if not (self.x <= cursor.position[0] <= self.x + (self.width + self.gap) * 2):
+                    self.exit()
+            else:
+                self.exit()
+
+        if keyboard.escape:
             self.exit()
 
         for SECTION in self.sections:
             SECTION.tick()
 
     def render(self):
-        root.window.blit(self.header_surface, (self.x, self.gap))
-        root.window.blit(self.background_surface, (self.x, self.gap))
+        root.window.blit(self.header_surface, (self.x, self.y))
+        root.window.blit(self.background_surface, (self.x, self.y))
 
         root.window.blit(self.setting_logo_surface, self.setting_logo_position)
         root.window.blit(self.setting_text_surface, self.setting_text_position)
