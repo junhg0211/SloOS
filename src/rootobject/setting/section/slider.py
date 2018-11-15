@@ -11,22 +11,26 @@ import math
 # TODO rootobject.setting에다가 값 변경하는 그거 구현하기.  # self.get() 만들어서 설정할 예정.
 
 class Slider(sectionelement.SectionElement):
-    def __init__(self, section, text, contents, text_format=textformat.TextFormat(slo.slo['appearance']['font'], 18, color.text)):
+    def __init__(self, section, text, contents, value=None, text_format=textformat.TextFormat(slo.slo['appearance']['font'], 18, color.text)):
         self.section = section
         self.text = text
         self.contents = contents
+        self.value = value
         self.text_format = text_format
 
-        self.title_surface = self.text_format.render(self.text)
+        if self.value is None:
+            self.value = self.contents[0]
 
-        self.line_surface = pygame.Surface((2, self.title_surface.get_height()))
+        self.text_surface = self.text_format.render(f'{self.text}: {self.value}')
+
+        self.line_surface = pygame.Surface((2, self.text_surface.get_height()))
         self.line_surface.fill(color.text)
 
         self.y = 0  # 처음 텍스트의 y 시작좌표
 
         self.first = True
 
-        self.height = self.title_surface.get_height()
+        self.height = self.text_surface.get_height()
 
         self.open = False
         self.text_moving = False
@@ -44,6 +48,7 @@ class Slider(sectionelement.SectionElement):
 
         self.slider_background_surface = pygame.Surface((self.section.setting.width, self.section.setting.height))
         self.slider_header_surface = pygame.Surface((self.section.setting.width, 40))
+        self.slider_contents = []
         self.setting_logo_surface = pygame.transform.smoothscale(pygame.image.load('./res/image/icon/setting.png'), (19, 19)).convert_alpha()
         self.setting_text_surface = textformat.TextFormat(slo.slo['appearance']['font'], 17, color.text).render(self.text)
         self.setting_logo_position = [self.slider_x + 12, self.section.setting.gap + 10]
@@ -52,6 +57,15 @@ class Slider(sectionelement.SectionElement):
         self.slider_background_surface.set_alpha(slo.setting['opacity']['background'])
         self.slider_header_surface.fill(color.white)
         self.slider_header_surface.set_alpha(10)
+
+        for i in range(len(self.contents)):
+            self.slider_contents.append([
+                self.text_format.render(self.contents[i]),
+                [self.slider_x + self.section.setting.gap, i * (self.text_format.size + self.section.setting.gap)],
+                self.contents[i]
+            ])
+
+        self.slider_contents_block_size = (self.slider_background_surface.get_width(), self.text_format.size + self.section.setting.gap)
 
     def tick(self):
         if self.first:
@@ -70,6 +84,12 @@ class Slider(sectionelement.SectionElement):
         if cursor.epressed[0]:
             if self.text_x - 12 <= cursor.position[0] <= self.text_x + self.section.header_width - 20 and self.section.y + self.y <= cursor.position[1] <= self.section.y + self.y + self.height:
                 self.open_state(not self.open)
+            elif self.slider_x <= cursor.position[0] <= self.slider_x + self.slider_background_surface.get_width():
+                if self.slider_y + self.slider_header_surface.get_height() <= cursor.position[1]:
+                    for i in range(len(self.slider_contents)):
+                        sy = self.slider_y + self.slider_header_surface.get_height() + self.section.setting.gap / 2 + (self.slider_contents[i][0].get_height() + self.section.setting.gap) * i
+                        if sy <= cursor.position[1] <= sy + self.slider_contents_block_size[1]:
+                            self.change_value(self.slider_contents[i][2])
 
         if self.line_moving:
             self.line_x += (self.line_x_target - self.line_x) / (root.display.display_fps / slo.slo['appearance']['motion_speed'])
@@ -98,6 +118,10 @@ class Slider(sectionelement.SectionElement):
                 self.line_x_target = self.text_x + self.section.header_width - 40 - self.line_surface.get_width() + self.section.setting.x
                 self.text_x_target = 24 + self.section.setting.x
 
+        if self.open or self.slider_open:
+            for i in range(len(self.slider_contents)):
+                self.slider_contents[i][1][1] = self.slider_y + self.slider_header_surface.get_height() + self.section.setting.gap + (self.slider_contents[i][0].get_height() + self.section.setting.gap) * i
+
         self.setting_logo_position[1] = self.slider_y + 10
         self.setting_text_position[1] = self.slider_y + 7
 
@@ -107,7 +131,7 @@ class Slider(sectionelement.SectionElement):
     def render(self):
         root.window.blit(self.line_surface, (self.line_x, self.section.y + self.y))
 
-        root.window.blit(self.title_surface, (self.text_x, self.section.y + self.y))
+        root.window.blit(self.text_surface, (self.text_x, self.section.y + self.y))
 
         if self.open or self.slider_open:
             root.window.blit(self.slider_background_surface, (self.slider_x, self.slider_y))
@@ -115,6 +139,9 @@ class Slider(sectionelement.SectionElement):
 
             root.window.blit(self.setting_logo_surface, self.setting_logo_position)
             root.window.blit(self.setting_text_surface, self.setting_text_position)
+
+            for content in self.slider_contents:
+                root.window.blit(content[0], content[1])
 
     def open_state(self, state):
         self.open = state
@@ -133,3 +160,11 @@ class Slider(sectionelement.SectionElement):
 
     def get_open(self):
         return self.open
+
+    def get_value(self):
+        return self.value
+
+    def change_value(self, value):
+        self.value = value
+        self.text_surface = self.text_format.render(f'{self.text}: {self.value}')
+        self.open_state(not self.open)
