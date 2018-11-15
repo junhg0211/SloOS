@@ -148,6 +148,7 @@ class Slider(sectionelement.SectionElement):
         self.line_moving = True
         self.text_moving = True
         self.slider_moving = True
+
         if self.open:
             self.line_x_target = self.text_x + self.section.header_width - 40 - self.line_surface.get_width()
             self.text_x_target = 24 + self.section.setting.x
